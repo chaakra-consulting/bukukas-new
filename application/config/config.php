@@ -26,7 +26,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 
 
-$config['base_url'] = 'https://bukukas.chaakra-consulting.com/';
+//$config['base_url'] = 'https://bukukas.chaakra-consulting.com/';
+$config['base_url'] = 'http://localhost/bukukas-2/';
 
 
 //try to catch the base url in case of undefined base url 
