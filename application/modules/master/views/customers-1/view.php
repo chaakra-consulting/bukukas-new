@@ -51,7 +51,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="email" class=" col-md-3">Nama PJ</label>
+                <label for="email" class=" col-md-3">Nama Kontak</label>
                 <div class=" col-md-9">
                     <?php
                     echo form_input(array(
@@ -72,6 +72,21 @@
                         "id" => "contact",
                         "name" => "contact",
                         "value" => $model_info->contact,
+                        "class" => "form-control",
+                        "data-rule-required" => true,
+                        "readonly" => true
+                    ));
+                    ?>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="gender_contact" class=" col-md-3">Jenis Kelammin</label>
+                <div class=" col-md-9">
+                    <?php
+                    echo form_input(array(
+                        "id" => "gender_contact",
+                        "name" => "gender_contact",
+                        "value" => $model_info->gender_contact,
                         "class" => "form-control",
                         "data-rule-required" => true,
                         "readonly" => true

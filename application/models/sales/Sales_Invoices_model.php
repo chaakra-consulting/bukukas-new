@@ -51,9 +51,10 @@ class Sales_Invoices_model extends Crud_model {
 
     }
 
-    function get_invoices_total_summary($invoice_id = 0) {
+    function get_invoices_total_summary($invoice_id = 0, $invoice_termin = null) {
         $invoice_items_table = $this->db->dbprefix('sales_invoices_items');
         $invoices_table = $this->db->dbprefix('sales_invoices');
+        $invoices_payments_table = $this->db->dbprefix('sales_invoices_payments');
         $clients_table = $this->db->dbprefix('master_customers');
         $taxes_table = $this->db->dbprefix('taxes');
 
@@ -68,9 +69,79 @@ class Sales_Invoices_model extends Crud_model {
         FROM $invoices_table
         LEFT JOIN (SELECT $taxes_table.* FROM $taxes_table) AS tax_table ON tax_table.id = $invoices_table.fid_tax
         WHERE $invoices_table.deleted=0 AND $invoices_table.id=$invoice_id";
-
         $invoice = $this->db->query($invoice_sql)->row();
 
+        if($invoice_termin){
+            $paymentAll = $this->db
+            ->select("COUNT(*) AS payment_count, SUM(total) AS payment_subtotal")
+            ->from("(SELECT * 
+                    FROM $invoices_payments_table
+                    WHERE deleted = 0
+                    AND fid_sales_invoice = $invoice_id
+                    ORDER BY payment_date ASC) AS ordered")
+            ->get()
+            ->row();
+
+            $payment = $this->db
+                ->select("COUNT(*) AS payment_count, SUM(total) AS payment_subtotal")
+                ->from("(SELECT * 
+                        FROM $invoices_payments_table
+                        WHERE deleted = 0
+                        AND fid_sales_invoice = $invoice_id
+                        ORDER BY payment_date ASC
+                        LIMIT " . max(0, $invoice_termin - 1) . ") AS ordered")
+                ->get()
+                ->row();
+
+            $current_payment = $this->db
+                ->select("p.total AS payment_subtotal")
+                ->from("(SELECT p.*, 
+                                ROW_NUMBER() OVER (ORDER BY p.payment_date ASC) AS rn
+                        FROM $invoices_payments_table p
+                        LEFT JOIN $invoices_table i
+                                ON i.id = p.fid_sales_invoice
+                        WHERE p.deleted = 0
+                        AND i.deleted = 0
+                        AND p.fid_sales_invoice = $invoice_id
+                        ORDER BY p.payment_date ASC
+                        ) AS p")
+                ->where('p.rn', $invoice_termin)   // ambil urutan ke-n
+                ->limit(1)
+                ->get()
+                ->row();
+            
+        }else{
+            $paymentAll = $this->db
+            ->select("COUNT(*) AS payment_count, SUM(total) AS payment_subtotal")
+            ->from("(SELECT * 
+                    FROM $invoices_payments_table
+                    WHERE deleted = 0
+                    AND fid_sales_invoice = $invoice_id
+                    ORDER BY payment_date ASC) AS ordered")
+            ->get()
+            ->row();
+
+            $payment_sql = "SELECT COUNT($invoices_payments_table.id) AS payment_count,SUM($invoices_payments_table.total) AS payment_subtotal
+            FROM $invoices_payments_table
+            LEFT JOIN $invoices_table ON $invoices_table.id = $invoices_payments_table.fid_sales_invoice    
+            WHERE $invoices_payments_table.deleted = 0 
+            AND $invoices_payments_table.fid_sales_invoice = $invoice_id 
+            AND $invoices_table.deleted = 0 
+            AND $invoices_payments_table.status = 'terbayar'
+            ORDER BY $invoices_payments_table.payment_date ASC";
+            $payment = $this->db->query($payment_sql)->row();
+            
+            $current_payment_sql = "SELECT $invoices_payments_table.total AS payment_subtotal
+                FROM $invoices_payments_table
+                LEFT JOIN $invoices_table ON $invoices_table.id = $invoices_payments_table.fid_sales_invoice    
+                WHERE $invoices_payments_table.deleted = 0 
+                AND $invoices_payments_table.fid_sales_invoice = $invoice_id 
+                AND $invoices_table.deleted = 0 
+                AND $invoices_payments_table.status = 'belum-terbayar'
+                ORDER BY $invoices_payments_table.payment_date ASC
+                LIMIT 1";
+            $current_payment = $this->db->query($current_payment_sql)->row();
+        }
 
         $result = new stdClass();
 
@@ -78,6 +149,7 @@ class Sales_Invoices_model extends Crud_model {
         $result->tax_percentage = $invoice->tax_percentage;
         $result->tax_name = $invoice->tax_name;
         $result->diskon = $invoice->potongan;
+        $result->payment_subtotal = $payment->payment_subtotal;
         $result->tax = 0;
         if ($invoice->tax_percentage) {
             $result->tax = $result->invoice_subtotal * ($invoice->tax_percentage / 100);
@@ -87,15 +159,50 @@ class Sales_Invoices_model extends Crud_model {
         }
         
         $result->invoice_total = $item->invoice_subtotal + $result->tax + ($result->potongan);
-
         $result->grand_total = $item->invoice_subtotal + $result->tax + ($result->potongan);
-        // $result->total_paid = $payment->total_paid;
+        $result->grand_total_no_pph = $item->invoice_subtotal + $result->tax;
+        $result->payment_subtotal_minus = $result->grand_total - $payment->payment_subtotal;
+        
+        $result->payment_subtotal_termin = $current_payment->payment_subtotal ? $current_payment->payment_subtotal : 0;
+        
+        $factorPPH = round(($result->invoice_subtotal + $result->tax) / $result->grand_total , 8);
+        $result->payment_subtotal_termin_no_pph = round($result->payment_subtotal_termin * $factorPPH);
+
+        // jika dengan pph
+        if ($invoice->potongan) {
+            $result->payment_total_termin_no_ppn_with_pph = round($result->payment_subtotal_termin / (1 + ($invoice->tax_percentage/100) + ($invoice->potongan/100)), 0);
+            $result->payment_pph_termin_no_ppn_with_pph = round($result->payment_total_termin_no_ppn_with_pph * ($invoice->potongan / 100), 0);
+            $result->payment_ppn_termin_no_ppn_with_pph = round($result->payment_total_termin_no_ppn_with_pph * ($invoice->tax_percentage / 100), 0);
+        }else{
+            $result->payment_total_termin_no_ppn_with_pph = 
+            $result->payment_pph_termin_no_ppn_with_pph =
+            $result->payment_ppn_termin_no_ppn_with_pph = 0;
+        }
+
+        // jika tanpa pph
+        $result->payment_total_termin_no_ppn = ($invoice->tax_percentage) ? round($result->payment_subtotal_termin_no_pph / (1 + ($invoice->tax_percentage/100)), 0) : $result->payment_subtotal_termin_no_pph;
+        $result->payment_ppn_termin_no_ppn = round($result->payment_total_termin_no_ppn * ($invoice->tax_percentage / 100), 0);
+
+        $result->payment_done_subtotal = $payment->payment_subtotal;  
+        $result->payment_done_subtotal_no_pph = round($payment->payment_subtotal * $factorPPH);
+        //$result->percentage_done_no_pph = $result->payment_done_subtotal_no_pph / $result->grand_total_no_pph * 100;
+
+        $subtotal_invoice = $payment->payment_subtotal + $current_payment->payment_subtotal;
+        $result->payment_invoice_total = $paymentAll->payment_subtotal;
+        $result->payment_sisa = $result->grand_total - $subtotal_invoice;
+        $result->payment_sisa_no_pph = $result->grand_total_no_pph - $subtotal_invoice;
+
+        $result->termin_terbayar = $invoice_termin ? ($invoice_termin > 2 ? 'Termin 1 - '. $invoice_termin - 1 : 'Termin 1') : 0;
+        $result->termin = $invoice_termin ? 'Termin '.$invoice_termin : 0;
+        $result->percentage_done = round($result->payment_done_subtotal / $result->grand_total * 100, 0);
+        
+        $result->percentage_now = round($result->payment_subtotal_termin / $result->grand_total * 100, 0);
 
         $result->balance_due = number_format($result->invoice_total, 2, ".", "") ;
-
-
         $result->currency_symbol = get_setting("currency_symbol");
         $result->currency =  get_setting("default_currency");
+        //print_r($payment);exit;
+        //print_r($result->tax);exit;
         return $result;
     }
 

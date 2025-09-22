@@ -457,3 +457,45 @@ if (!function_exists('get_date_difference_in_days')) {
     }
 
 }
+
+if (!function_exists('format_to_date_ina')) {
+
+    function format_to_date_ina($date_time, $convert_to_local = true, $with_day = false) {
+        if (!$date_time) {
+            return "";
+        }
+
+        if ($convert_to_local) {
+            $date_time = convert_date_utc_to_local($date_time);
+        }
+
+        $target_date = new DateTime($date_time);
+
+        // daftar nama bulan Indonesia
+        $bulan = [
+            1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ];
+
+        $hari = [
+            'Sunday'    => 'Minggu',
+            'Monday'    => 'Senin',
+            'Tuesday'   => 'Selasa',
+            'Wednesday' => 'Rabu',
+            'Thursday'  => 'Kamis',
+            'Friday'    => 'Jumat',
+            'Saturday'  => 'Sabtu'
+        ];
+
+        $nama_hari = $hari[$target_date->format('l')];
+        $tgl   = $target_date->format('j');  // tanpa leading zero
+        $bln   = $bulan[(int)$target_date->format('n')];
+        $thn   = $target_date->format('Y');
+
+        if($with_day){
+            return $nama_hari . ', ' . $tgl . ' ' . $bln . ' ' . $thn;
+        }else{
+            return $tgl . ' ' . $bln . ' ' . $thn;
+        }
+    }
+}

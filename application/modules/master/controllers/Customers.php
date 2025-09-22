@@ -29,6 +29,9 @@ class Customers extends MY_Controller
         //get custom fields
         $this->db->select('nama');
         $view_data["provinsi_dropdown"] = $this->db->get("ref_provinsi")->result_array();
+        // $model_info = $this->Master_Customers_model->get_details()->result();
+        // print_r($model_info);exit;
+
         $this->load->view('customers/modal_form', $view_data);
     }
     function get_customer_suggestion()
@@ -101,17 +104,22 @@ class Customers extends MY_Controller
 
         ));
 
+        $options = in_array($this->input->post('jenis'),['SWASTA','BUMN','BUMD']) ? array("bentuk" => $this->input->post('bentuk')) : array("jenis" => $this->input->post('jenis')) ;
+        $customers = $this->Master_Customers_model->get_details($options)->result();
+        $jenisCode = get_code_jenis_customers($this->input->post('jenis'),$this->input->post('bentuk'));
+        $count = str_pad(count($customers) + 1, 2, '0', STR_PAD_LEFT);
+        $code = $jenisCode.'.'.$count;
+
         $data = array(
-
             "name" => $this->input->post('name'),
-
             // "company_name" => $this->input->post('company_name'),
             "npwp" => $this->input->post('npwp'),
+            "code" => $code,
             "address" => $this->input->post('address'),
             "jenis" => $this->input->post('jenis'),
+            "bentuk" => $this->input->post('bentuk'),
             "email" => $this->input->post('email'),
             "contact" => $this->input->post('contact'),
-            "gender_contact" => $this->input->post('gender_contact'),
             "memo" => $this->input->post('memo'),
             "created_at" => get_current_utc_time()
         );
@@ -137,15 +145,28 @@ class Customers extends MY_Controller
             "name" => "required"
         ));
 
+        $customer = $this->Master_Customers_model->get_details(array("id" => $customers_id))->row();
+
+        if(!$customer->code){
+            // $options = in_array($this->input->post('jenis'),['SWASTA']) ? array("bentuk" => $this->input->post('bentuk'),"code_is_null" => true) : array("jenis" => $this->input->post('jenis'),"code_is_null" => true) ;
+            $options = array("jenis" => $this->input->post('jenis'),"code_is_null" => true) ;
+            $customers = $this->Master_Customers_model->get_details($options)->result();
+            $jenisCode = get_code_jenis_customers($this->input->post('jenis'),$this->input->post('bentuk'));
+            $count = str_pad(count($customers) + 1, 2, '0', STR_PAD_LEFT);
+            $code = $jenisCode.'.'.$count;
+        }
+
+
         $data = array(
 
             "name" => $this->input->post('name'),
             "npwp" => $this->input->post('npwp'),
+            "code" => $customer->code ? $customer->code : $code,
             "address" => $this->input->post('address'),
             "jenis" => $this->input->post('jenis'),
+            "bentuk" => $this->input->post('bentuk'),
             "email" => $this->input->post('email'),
             "contact" => $this->input->post('contact'),
-            "gender_contact" => $this->input->post('gender_contact'),
             "memo" => $this->input->post('memo')
         );
 
@@ -212,19 +233,15 @@ class Customers extends MY_Controller
 
     private function _make_row($data)
     {
-
-
         $row_data = array(
-            $data->npwp,
+            // $data->npwp,
             $data->name,
+            $data->code ?? '-',
             $data->jenis,
             $data->address,
             $data->email,
             $data->contact,
-            $data->gender_contact,
             $data->memo,
-
-
         );
 
 

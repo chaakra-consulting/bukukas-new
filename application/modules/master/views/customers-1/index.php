@@ -42,19 +42,19 @@
 
             columns: [
 
-                // {title: "No Npwp", "class": "text-center text-bold"},
+                {title: "No Npwp", "class": "text-center text-bold"},
 
-                {title: "Nama"},
+                {title: "Nama Instansi"},
 
-                {title: "Kode", "class": "text-center"},
-
-                {title: "Jenis"},
-
+                {title: "Jenis Instansi"},
+                
                 {title: "Alamat"},
 
                 {title: "Nama PJ", "class": "text-center"},
 
                 {title: "No Telepon", "class": "text-center"},
+                
+                {title: "Jenis Kelamin", "class": "text-center"},
 
                 {title: "Catatan", "class": "text-center"},
 
