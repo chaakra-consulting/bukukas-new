@@ -21,7 +21,7 @@
                                 <!-- Gunakan textarea agar HTML panjang/bertag tidak hilang -->
                                 <textarea type="hidden" name="description" hidden><?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?></textarea>
                             <?php else: ?>
-                            <input type="hidden" name="<?php echo $key; ?>" value="<?php echo $value; ?>">
+                                <input type="hidden" name="<?php echo $key; ?>" value="<?php echo $value; ?>">
                             <?php endif; ?>
                         <?php } ?>                      
                         <button type="submit" class="btn btn-default round">
@@ -30,12 +30,16 @@
                     </form>
                 </div>
             </div>
-            <?php
-        
+            <?php if ($show_close_preview): ?>
+                <div class="text-center">
+                    <a href="javascript:void(0)"
+                    class="btn btn-default round"
+                    onclick="window.close();">
+                    <?php echo lang('close_preview'); ?>
+                    </a>
+                </div>
+            <?php endif; ?>
 
-        if ($show_close_preview)
-            echo "<div class='text-center'>" . anchor("sales/s_invoices/view/" . $invoice_info->id, lang("close_preview"), array("class" => "btn btn-default round")) . "</div>"
-            ?>
 
         <div class="bg-white mt15 p30">
             <div class="col-md-12">

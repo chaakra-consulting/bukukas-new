@@ -25,12 +25,15 @@
                     </form>
                 </div>
             </div>
-            <?php
-        
-
-        if ($show_close_preview)
-            echo "<div class='text-center'>" . anchor("sales/s_invoices/view/" . $invoice_info->id, lang("close_preview"), array("class" => "btn btn-default round")) . "</div>"
-            ?>
+            <?php if ($show_close_preview): ?>
+                <div class="text-center">
+                    <a href="javascript:void(0)"
+                    class="btn btn-default round"
+                    onclick="window.close();">
+                    <?php echo lang('close_preview'); ?>
+                    </a>
+                </div>
+            <?php endif; ?>
 
         <div class="bg-white mt15 p30">
             <div class="col-md-12">
