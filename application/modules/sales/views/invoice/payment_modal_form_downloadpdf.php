@@ -168,18 +168,18 @@
     $("#invoice-item-form .select2").select2();
     setDatePicker("#payment_date");
 });
-    $(document).ready(function () {
-        $('#description').summernote({
-            height: 200, // tinggi editor
-            toolbar: [
-                ['style', ['bold', 'italic', 'underline', 'clear']],
-                ['font', ['strikethrough', 'superscript', 'subscript']],
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['insert', ['link']],
-                // ['view', ['fullscreen', 'codeview']]
-            ]
-        });
+$(document).ready(function () {
+    $('#description').summernote({
+        height: 200,
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['font', ['color', 'strikethrough', 'superscript', 'subscript']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['insert', ['link']]
+        ],
+        // fontSizes: ['8', '10', '12', '14', '18', '24', '36']               // ukuran font kustom
     });
+});
 
     $(document).ready(function () {
         var $form = $("#invoice-item-form");

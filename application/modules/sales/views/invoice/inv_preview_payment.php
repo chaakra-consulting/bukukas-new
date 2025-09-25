@@ -17,7 +17,12 @@
                         <input type="hidden" name="invoice_id" value="<?php echo $model_info->fid_sales_invoice; ?>" />
                         <input type="hidden" name="id" value="<?php echo $model_info->id; ?>" />
                         <?php foreach ($post_data as $key => $value) { ?>
+                            <?php if ($key === 'description'): ?>
+                                <!-- Gunakan textarea agar HTML panjang/bertag tidak hilang -->
+                                <textarea type="hidden" name="description" hidden><?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?></textarea>
+                            <?php else: ?>
                             <input type="hidden" name="<?php echo $key; ?>" value="<?php echo $value; ?>">
+                            <?php endif; ?>
                         <?php } ?>                      
                         <button type="submit" class="btn btn-default round">
                             <?php echo lang("download_pdf"); ?>
