@@ -96,6 +96,7 @@
                 <select name="invoice_rekening" id="invoice_rekening" class="select2">
                     <option value="bca-herlina">BCA - 4290737856 (Herlina Eka Subandriyo Putri)</option>
                     <option value="bsi-herlina">BSI - 7138737793 (Herlina Eka Subandriyo Putri)</option>
+                    <option value="bjt-chaakralogi">Bank JATIM - 0011286267 (CV CHAAKRALOGI)</option>
                 </select>
             </div>
         </div>

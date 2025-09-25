@@ -92,6 +92,10 @@
         <span style="color: black;">Pembayaran dapat dilakukan melalui Rekening Bank Syariah Indonesia (BSI).</span>
         <br>
         <span style="color: black;">No Rek 	: <b>7138737793</b> (An. Herlina Eka Subandriyo Putri)</span>
+        <?php } elseif ($post_data->invoice_rekening == 'bjt-chaakralogi') { ?>
+        <span style="color: black;">Pembayaran dapat dilakukan melalui Rekening Bank JATIM.</span>
+        <br>
+        <span style="color: black;">No Rek 	: <b>0011286267</b> (An. CV CHAAKRALOGI)</span>
         <?php } else { ?>
         <span style="color: black;">Pembayaran dapat dilakukan melalui Rekening Bank Central Asia (BCA).</span>
         <br>
