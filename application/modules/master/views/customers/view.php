@@ -18,7 +18,7 @@
                     ?>
                 </div>
             </div>
-        <div class="form-group">
+            <div class="form-group">
                 <label for="name" class=" col-md-3">Nama Instansi</label>
                 <div class=" col-md-9">
                     <?php
@@ -34,7 +34,38 @@
                     ?>
                 </div>
             </div>
-            
+            <div class="form-group">
+                <label for="jenis" class="col-md-3">Jenis Perusahaan</label>
+                <div class="col-md-9">
+                <?php
+                    echo form_input(array(
+                        "id" => "name",
+                        "name" => "name",
+                        "value" => $model_info->jenis,
+                        "class" => "form-control",
+                        "autofocus" => true,
+                        "readonly" => true,
+                        "data-rule-required" => true
+                    ));
+                    ?>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="bentuk" class="col-md-3">Bentuk Perusahaan</label>
+                <div class="col-md-9">
+                <?php
+                    echo form_input(array(
+                        "id" => "name",
+                        "name" => "name",
+                        "value" => $model_info->bentuk ?? '-',
+                        "class" => "form-control",
+                        "autofocus" => true,
+                        "readonly" => true,
+                        "data-rule-required" => true
+                    ));
+                    ?>
+                </div>
+            </div>
             <div class="form-group">
                 <label for="address" class=" col-md-3">Alamat</label>
                 <div class=" col-md-9">
