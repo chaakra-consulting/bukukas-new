@@ -81,7 +81,7 @@
         <button type="submit" 
                 class="btn btn-primary" 
                 data-action="<?= get_uri("sales/s_invoices/preview_receipt"); ?>">
-            <span class="fa fa-search"></span> <?php echo lang('invoice_preview'); ?>
+            <span class="fa fa-search"></span> <?php echo lang('receipt_preview'); ?>
         </button>
     </div>
 

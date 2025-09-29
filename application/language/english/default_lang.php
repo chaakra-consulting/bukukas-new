@@ -619,6 +619,7 @@ $lang["allow_partial_invoice_payment_from_clients"] = "Allow partial payment fro
 $lang["invoice_color"] = "Invoice Color";
 $lang["invoice_footer"] = "Invoice Footer";
 $lang["invoice_preview"] = "Invoice Preview";
+$lang["receipt_preview"] = "Receipt Preview";
 $lang["close_preview"] = "Close Preview";
 $lang["only_me"] = "Only me";
 $lang["specific_members_and_teams"] = "Specific members and teams";

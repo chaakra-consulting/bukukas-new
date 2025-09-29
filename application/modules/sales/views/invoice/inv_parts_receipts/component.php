@@ -34,9 +34,11 @@
         <td style="white-space:nowrap; vertical-align:top;">Untuk Pembayaran</td>
         <td style="text-align:center; vertical-align:top;">:</td>
         <td>
-            <?php echo $post_data->title; ?>
+            <?php echo $post_data->title; 
+            if($invoice_info->termin > 1) {?>
             (<?php echo $invoice_total_summary->termin; ?>
             <?php echo $invoice_total_summary->percentage_now; ?>%)
+            <?php } ?>
         </td>
     </tr>
     <tr>
