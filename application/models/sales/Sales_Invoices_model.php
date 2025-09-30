@@ -94,7 +94,7 @@ class Sales_Invoices_model extends Crud_model {
                 ->row();
 
             $current_payment = $this->db
-                ->select("p.total AS payment_subtotal")
+                ->select("p.*, p.total AS payment_subtotal")
                 ->from("(SELECT p.*, 
                                 ROW_NUMBER() OVER (ORDER BY p.payment_date ASC) AS rn
                         FROM $invoices_payments_table p
@@ -131,7 +131,7 @@ class Sales_Invoices_model extends Crud_model {
             ORDER BY $invoices_payments_table.payment_date ASC";
             $payment = $this->db->query($payment_sql)->row();
             
-            $current_payment_sql = "SELECT $invoices_payments_table.total AS payment_subtotal
+            $current_payment_sql = "SELECT $invoices_payments_table.*, $invoices_payments_table.total AS payment_subtotal
                 FROM $invoices_payments_table
                 LEFT JOIN $invoices_table ON $invoices_table.id = $invoices_payments_table.fid_sales_invoice    
                 WHERE $invoices_payments_table.deleted = 0 
@@ -195,13 +195,15 @@ class Sales_Invoices_model extends Crud_model {
         $result->termin_terbayar = $invoice_termin ? ($invoice_termin > 2 ? 'Termin 1 - '. ($invoice_termin - 1) : 'Termin 1') : 0;
         $result->termin = $invoice_termin ? 'Termin '.$invoice_termin : 0;
         $result->percentage_done = round($result->payment_done_subtotal / $result->grand_total * 100, 0);
+        $result->payment_date = $current_payment->payment_date;
+        $result->invoice_code = $current_payment->invoice_code;
         
         $result->percentage_now = round($result->payment_subtotal_termin / $result->grand_total * 100, 0);
 
         $result->balance_due = number_format($result->invoice_total, 2, ".", "") ;
         $result->currency_symbol = get_setting("currency_symbol");
         $result->currency =  get_setting("default_currency");
-        //print_r($payment);exit;
+        // print_r($current_payment);exit;
         //print_r($result->tax);exit;
         return $result;
     }

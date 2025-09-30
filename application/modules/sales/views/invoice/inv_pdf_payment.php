@@ -13,9 +13,10 @@
         "color" => $color,
         "invoice_info" => $invoice_info,
         "model_info" => $model_info,
-        "post_data" => $post_data
+        "post_data" => $post_data,
+        "invoice_total_summary" => $invoice_total_summary
     );
-    // print_r($data);exit;
+    // print_r($invoice_total_summary);exit;
     if ($invoice_style === "style_2") {
         $this->load->view('inv_parts_payments/header_style_2.php', $data);
     } else {

@@ -15,7 +15,8 @@
             $data = array(
                 "client_info" => $client_info,
                 "color" => $color,
-                "invoice_info" => $invoice_info
+                "invoice_info" => $invoice_info,
+                "invoice_total_summary" => $invoice_total_summary,
             );
             $this->load->view('inv_parts_payments/invoice_info', $data);
             ?>
@@ -24,7 +25,7 @@
     <tr>
         <td colspan="4" style="text-align:center;">
             <span style="font-size:18px;font-weight: bold;">
-                <u>No : <?php echo $invoice_payments->invoice_code; ?></u>
+                <u>No : <?php echo $invoice_total_summary->invoice_code; ?></u>
             </span>
         </td>
     </tr>
