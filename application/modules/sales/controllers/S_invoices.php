@@ -875,7 +875,7 @@ class S_invoices extends MY_Controller {
     {
         $invoice_id = $this->input->post('invoice_id');
         $invoice_termin = $this->input->post('invoice_termin');
-        $invoice_payment = $this->Sales_InvoicesPayments_model->get_details(array("id" => $this->input->post('id'), "status" => 'belum-terbayar'))->row();
+        $invoice_payment = $this->Sales_InvoicesPayments_model->get_details(array("id" => $this->input->post('id')))->row();
         $invoice_payment_id = $invoice_payment->id;
         $url = 'inv_pdf_payment';
 
