@@ -192,7 +192,7 @@ class Sales_Invoices_model extends Crud_model {
         $result->payment_sisa = $result->grand_total - $subtotal_invoice;
         $result->payment_sisa_no_pph = $result->grand_total_no_pph - $subtotal_invoice;
 
-        $result->termin_terbayar = $invoice_termin ? ($invoice_termin > 2 ? 'Termin 1 - '. $invoice_termin - 1 : 'Termin 1') : 0;
+        $result->termin_terbayar = $invoice_termin ? ($invoice_termin > 2 ? 'Termin 1 - '. ($invoice_termin - 1) : 'Termin 1') : 0;
         $result->termin = $invoice_termin ? 'Termin '.$invoice_termin : 0;
         $result->percentage_done = round($result->payment_done_subtotal / $result->grand_total * 100, 0);
         
