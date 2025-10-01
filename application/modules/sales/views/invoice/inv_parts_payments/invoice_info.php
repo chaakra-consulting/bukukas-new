@@ -4,11 +4,9 @@
     <!-- </u> -->
     <br>
 </span>
-<strong>
-    <span style="font-size:18px;font-weight: bold;">
-        <?php echo "Surabaya, " . format_to_date_ina($invoice_total_summary->payment_date, false); ?>
-    </span>
-</strong>
+<span style="font-size:18px;font-weight: bold; text-align: right">
+    <?php echo "Surabaya, " . format_to_date_ina($invoice_total_summary->payment_date, false); ?>
+</span>
 
 <div style="line-height: 10px;"></div>
 

@@ -26,6 +26,11 @@
 <!-- Bagian detail kwitansi -->
 <table style="color: black; width:100%; border-collapse:collapse;">
     <tr>
+        <td style="width:28%;vertical-align:top;">No. SPK</td>
+        <td style="width:2%;text-align:center;">:</td>
+        <td style="width:70%;"><?php echo $invoice_info->spk_code; ?></td>
+    </tr>
+    <tr>
         <td style="width:28%;vertical-align:top;">Sudah Terima Dari</td>
         <td style="width:2%;text-align:center;">:</td>
         <td style="width:70%;"><?php echo $client_info->name; ?></td>
@@ -74,7 +79,25 @@
             <?php echo to_currency($total, $invoice_total_summary->currency_symbol); ?>
             </b>
         </td>
-        <td></td>
-        <td></td>
+        <td style="text-align:center; vertical-align:top;">
+        </td>
+        <td  style="font-size:13px;">
+            <?php 
+                if($invoice_info->fid_tax == 0){
+                    if($invoice_info->potongan && $post_data->invoice_pph_type == 'dengan-pph'){
+                        $text = "*Sudah termasuk PPN 11% dan PPH";
+                    }else{
+                        $text = "*Sudah termasuk PPN 11%";
+                    }
+                }else{
+                    if($invoice_info->potongan && $post_data->invoice_pph_type == 'dengan-pph'){
+                        $text = "*Sudah termasuk PPH";
+                    }else{
+                        $text = "";
+                    }
+                }
+                echo $text;
+            ?>
+        </td>
     </tr>
 </table>

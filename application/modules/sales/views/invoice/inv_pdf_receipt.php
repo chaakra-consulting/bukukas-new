@@ -32,10 +32,10 @@
                     <!--
                     <img src="https://bukukas.chaakra-consulting.com/assets/images/ttd1.png" width="240" height="100" alt="">
                     -->
-                    <p style="font-weight: bold; color: black; margin: 100px 0 0 0; line-height: 1.5;">
+                    <p style="font-weight: bold; color: black; margin: 80px 0 0 0; line-height: 1.5;">
                         <u>Herlina Eka Subandriyo Putri., M.Psi., Psikolog</u>
                     </p>
-                    <p style="color: black; line-height: 1.5;">
+                    <p style="color: black; line-height: 1.5; margin-top: -3px">
                         Direktur
                     </p>
                 </div>
