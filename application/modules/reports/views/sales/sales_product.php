@@ -35,10 +35,10 @@
                             <tr>
                                 <th style="text-align: center;">Nama Perusahaan</th>
                                 <th style="text-align: center;">Nama Projek</th>
-                                <th style="text-align: center; width: 150px;">Total Rupiah</th>
+                                <th style="text-align: center; width: 150px;">DPP</th>
                                 <th style="text-align: center; width: 140px;">PPN</th>
-                                <th style="text-align: center; width: 150px;">Total Keseluruhan</th>
-                                <th style="text-align: center;">Status Pembayaran</th>
+                                <th style="text-align: center; width: 150px;">Grand Total</th>
+                                <th style="text-align: center;">Status</th>
                                 <th style="text-align: center; width: 150px;">Total Terbayar</th>
                             </tr>
                         </thead>
