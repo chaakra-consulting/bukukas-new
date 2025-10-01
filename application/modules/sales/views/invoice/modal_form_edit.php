@@ -19,7 +19,7 @@
                         "name" => "spk_code",
                         "class" => "form-control validate-hidden",
                         "value" =>$model_info->spk_code,
-                        "data-rule-required" => true,
+                        // "data-rule-required" => true,
                         "data-msg-required" => lang("field_required"),
                     )); ?>
                 </div>
@@ -84,7 +84,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="inv_contract_date" class="col-md-3">Tanggal Kontrak</label>
+                <label for="inv_contract_date" class="col-md-3">Tanggal Kontrak Berakhir</label>
                 <div class=" col-md-9">
                     <?php
                     echo form_input(array(
