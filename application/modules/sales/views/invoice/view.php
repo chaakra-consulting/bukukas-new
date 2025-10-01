@@ -76,7 +76,11 @@
                 <div class="table-responsive mt15 pl15 pr15">
                 <!-- <?php echo modal_anchor(get_uri("sales/s_invoices/payment_modal_form"), "<i class='fa fa-plus-circle'></i> " . "Tambah Invoice", array("class" => "btn btn-default", "title" => "Tambah Invoice", "data-post-invoice_id" => $invoice_info->id)); ?> -->
                 <?php if ($count_payment >= $invoice_info->termin): ?>
-                    <button class="btn btn-default" onclick="alert('Invoice sudah memenuhi termin, ubah termin pada menu Edit Project!')">
+                    <button class="btn btn-default" onclick="alert('Ubah termin terlebih dahulu pada menu Edit Project!')">
+                        <i class='fa fa-plus-circle'></i> Tambah Invoice
+                    </button>
+                <?php elseif (!$invoice_info->inv_contract_date): ?>
+                    <button class="btn btn-default" onclick="alert('Isi Tanggal Kontrak Berakhir terlebih dahulu pada menu Edit Project!')">
                         <i class='fa fa-plus-circle'></i> Tambah Invoice
                     </button>
                 <?php else: ?>
