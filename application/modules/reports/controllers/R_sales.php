@@ -46,8 +46,13 @@ function __construct() {
 				ELSE 0 
 				END
 			) 
-		AS total_terbayar			
-			");
+			AS total_terbayar,
+			(
+				SUM(sii.total) 
+				+ (SUM(sii.total) * (taxes.value / 100)) 
+				+ (SUM(sii.total) * (si.potongan / 100))
+			) AS total_all		
+		");
 		$this->db->from("sales_invoices si");
 		$this->db->join("sales_invoices_items sii", "si.id = sii.fid_invoices", "left");
 		$this->db->join("taxes", "si.fid_tax = taxes.id", "left");

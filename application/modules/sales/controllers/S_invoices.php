@@ -341,7 +341,7 @@ class S_invoices extends MY_Controller {
                 $count_payment_terbayar++;
             }
         }
-        $payment_status = ($count_payment_all && $count_payment_all == $count_payment_terbayar) ? 'Lunas' : $count_payment_terbayar . ' to ' . $count_payment_all;
+        $payment_status = ($count_payment_all != 0 && $count_payment_all == $count_payment_terbayar) ? 'Lunas' : $count_payment_terbayar . ' to ' . $count_payment_all;
 
         $row_data = array(
             $data->spk_code ?? '-',
