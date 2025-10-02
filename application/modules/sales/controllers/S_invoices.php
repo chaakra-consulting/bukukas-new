@@ -217,6 +217,7 @@ class S_invoices extends MY_Controller {
         // print_r($this->input->post('fid_tax'));exit;
         $data = array(
             "code" => $bukpot,
+            "spk_code" => $this->input->post('spk_code'),
             "fid_custt" => $this->input->post('fid_custt'),
             "fid_custtt" => $this->input->post('fid_custtt'),
             "fid_custttt" => $this->input->post('fid_custttt'),
