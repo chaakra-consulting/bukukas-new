@@ -126,10 +126,22 @@
         setDatePicker("#end_date");
 
         $('#table-print').DataTable({
-            "order": [[2, "desc"]], // Default sorting by total amount in descending order
+            "order": [[2, "desc"]],
             "columnDefs": [
                 {"targets": [0, 1, 5], "type": "string"},
-                {"targets": [2, 3, 4, 6], "type": "num-fmt", "orderSequence": ["desc", "asc"]}
+                {
+                    "targets": [2, 3, 4, 6],
+                    "render": function (data, type, row) {
+                        if (type === 'sort' || type === 'type') {
+                            return parseFloat(
+                                data.replace(/Rp\.?/g, '') 
+                                    .replace(/,/g, '')
+                                    .trim()
+                            ) || 0;
+                        }
+                        return data;
+                    }
+                }            
             ],
             "paging": false,
             "info": false, 
