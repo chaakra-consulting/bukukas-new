@@ -35,12 +35,18 @@
                             <tr>
                                 <th style="text-align: center;">Nama Perusahaan</th>
                                 <th style="text-align: center;">Nama Projek</th>
-                                <th style="text-align: center; width: 180px;">Total Rupiah</th>
-                                <th style="text-align: center; width: 180px;">PPN</th>
+                                <th style="text-align: center; width: 150px;">DPP</th>
+                                <th style="text-align: center; width: 140px;">PPN</th>
+                                <th style="text-align: center; width: 150px;">Grand Total</th>
+                                <th style="text-align: center;">Status</th>
+                                <th style="text-align: center; width: 150px;">Total Terbayar</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php $jumlah = 0;
+                            <?php 
+                            $jumlah = 0;
+                            $jumlah_total_all = 0;
+                            $jumlah_terbayar = 0;
                             foreach ($sales_report as $row) { ?>
                                 <tr>
                                     <td>
@@ -58,12 +64,41 @@
                                         ?>
                                     </td>
                                     <td><?php echo $row->title; ?></td>
+                                    <?php
+                                    
+                                    $isComplete = ($row->termin_1 == ($row->termin_all ?? 0));
+                                    $isAutoLunas = ($row->inv_date < '2025-09-01' && ($row->termin_all ?? 0) == 0);
+                                    $labelClass = ($isComplete || $isAutoLunas) ? 'label-success' : 'label-danger';
+                                    if ($isComplete || $isAutoLunas) {
+                                        $statusText = 'Lunas';
+                                        $total_all = $row->total + $row->tax_amount + $row->pph_amount;
+                                        $total = $total_all;
+                                    }else{ 
+                                        $statusText = $row->termin_1 . ' to ' . ($row->termin_all ?? 0);
+                                        $total = $row->total_terbayar;
+                                    }
+                                    ?>
                                     <td style="text-align: right;">
                                         <?php echo to_currency($row->total, false);
                                         $jumlah += $row->total; ?>
                                     </td>
                                     <td style="text-align: right;">
                                         <?php echo to_currency($row->tax_amount, false); ?>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <?php 
+                                        $jumlah_total_all += $row->total_all;
+                                        echo to_currency($row->total_all, false); 
+                                        ?>
+                                    </td>
+                                    <td style="text-align:center;">
+                                        <span class="label <?= $labelClass ?>">
+                                            <?= $statusText ?>
+                                        </span>
+                                    </td>                                    
+                                    <td style="text-align: right;">
+                                        <?php echo to_currency($total, false); 
+                                        $jumlah_terbayar += $total; ?>
                                     </td>
                                 </tr>
                             <?php } ?>
@@ -73,6 +108,9 @@
                                 <th colspan="2" style="text-align: right;">TOTAL :</th>
                                 <th style="text-align: right;"><?php echo to_currency($jumlah, false); ?></th>
                                 <th style="text-align: right;"><?php echo to_currency($total_tax, false); ?></th>
+                                <th style="text-align: right;"><?php echo to_currency($jumlah_total_all, false); ?></th>
+                                <th colspan="1" style="text-align: right;"></th>
+                                <th style="text-align: right;"><?php echo to_currency($jumlah_terbayar, false); ?></th>
                             </tr>
                         </tfoot>
                     </table>
@@ -90,8 +128,8 @@
         $('#table-print').DataTable({
             "order": [[2, "desc"]], // Default sorting by total amount in descending order
             "columnDefs": [
-                {"targets": [0, 1], "type": "string"},
-                {"targets": [2, 3], "type": "num-fmt", "orderSequence": ["desc", "asc"]}
+                {"targets": [0, 1, 5], "type": "string"},
+                {"targets": [2, 3, 4, 6], "type": "num-fmt", "orderSequence": ["desc", "asc"]}
             ],
             "paging": false,
             "info": false, 

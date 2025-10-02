@@ -1,17 +1,16 @@
 <div id="page-content" class="clearfix">
-    <div style="max-width: 1000px; margin: auto;">
+    <div style="margin: auto;">
         <div class="page-title clearfix mt15">
-            <h1>Project #<?php echo $invoice_info->code; ?>
+            <h3>Project #<?php echo $invoice_info->spk_code; ?>
                 
-            </h1>
+            </h3>
             <div class="title-button-group">
                 <span class="dropdown inline-block">
-                    <button class="btn btn-info dropdown-toggle  mt0 mb0" type="button" data-toggle="dropdown" aria-expanded="true">
+                    <!-- <button class="btn btn-info dropdown-toggle  mt0 mb0" type="button" data-toggle="dropdown" aria-expanded="true">
                         <i class='fa fa-cogs'></i> <?php echo lang('actions'); ?>
                         <span class="caret"></span>
                     </button>
-                    <ul class="dropdown-menu" role="menu">
-                        
+                    <ul class="dropdown-menu" role="menu">                       
                         <li role="presentation"><?php echo anchor(get_uri("sales/s_invoices/download_pdf/" . $invoice_info->id), "<i class='fa fa-download'></i> " . lang('download_pdf'), array("title" => lang('download_pdf'))); ?> </li>
                         <li role="presentation"><?php echo anchor(get_uri("sales/s_invoices/preview/" . $invoice_info->id ), "<i class='fa fa-search'></i> " . lang('invoice_preview'), array("title" => lang('invoice_preview')), array("target" => "_blank")); ?> </li>
                         <li role="presentation" class="divider"></li>
@@ -19,11 +18,10 @@
                         <li role="presentation"><?php echo modal_anchor(get_uri("sales/s_invoices/modal_form_edit"), "<i class='fa fa-edit'></i> " . lang('edit_invoice'), array("title" => lang('edit_invoice'), "data-post-id" => $invoice_info->id, "role" => "menuitem", "tabindex" => "-1")); ?> </li>
 
                         <?php } ?>
-                    </ul>
+                    </ul> -->
                 </span>
-                <?php if($invoice_info->status != "terverifikasi" ) echo modal_anchor(get_uri("sales/s_invoices/item_modal_form"), "<i class='fa fa-plus-circle'></i> " . "Tambah Proyek", array("class" => "btn btn-default", "title" => "Tambah Proyek", "data-post-invoice_id" => $invoice_info->id)); ?>
-
-                <?php if($invoice_info->paid != "paid" && $invoice_info->status != "posting" )  echo modal_anchor(get_uri("sales/s_invoices/posting_modal_form/" . $invoice_info->id), "<i class='fa fa-money'></i> " . "Posting Invoices", array("class" => "btn btn-default","title" => "Posting to Journal", "data-post-id" => $invoice_info->id)); ?>
+                <!-- <?php if($invoice_info->paid != "paid" && $invoice_info->status != "posting" )  echo modal_anchor(get_uri("sales/s_invoices/posting_modal_form/" . $invoice_info->id), "<i class='fa fa-money'></i> " . "Posting Invoices", array("class" => "btn btn-default","title" => "Posting to Journal", "data-post-id" => $invoice_info->id)); ?> -->
+                <?php echo modal_anchor(get_uri("sales/s_invoices/modal_form_edit/"), "<i class='fa fa-edit'></i> ". lang('edit_project'), array("class" => "btn btn-default","title" => lang('edit_project'), "data-post-id" => $invoice_info->id, "role" => "menuitem", "tabindex" => "-1")); ?>
             </div>
         </div>
 
@@ -36,34 +34,36 @@
         <div class="mt15">
             <div class="panel panel-default p15 b-t">
                 <div class="clearfix p20">
-                    <!-- small font size is required to generate the pdf, overwrite that for screen -->
                     <style type="text/css"> .invoice-meta {font-size: 100% !important;}</style>
 
                     <?php
-                    $color = get_setting("invoice_color");
-                    if (!$color) {
-                        $color = "#2AA384";
-                    }
-                    $invoice_style = get_setting("invoice_style");
-                    $data = array(
-                        "client_info" => $client_info,
-                        "color" => $color,
-                        "invoice_info" => $invoice_info,
-                    );
+                    // $color = get_setting("invoice_color");
+                    // if (!$color) {
+                    //     $color = "#2AA384";
+                    // }
+                    // $invoice_style = get_setting("invoice_style");
+                    // $data = array(
+                    //     "client_info" => $client_info,
+                    //     "color" => $color,
+                    //     "invoice_info" => $invoice_info,
+                    // );
 
-                    if ($invoice_style === "style_2") {
-                        $this->load->view('inv_parts/header_style_2.php', $data);
-                    } else {
-                        $this->load->view('inv_parts/header_style_1.php', $data);
-                    }
+                    // if ($invoice_style === "style_2") {
+                    //     $this->load->view('inv_parts/header_style_2.php', $data);
+                    // } else {
+                    //     $this->load->view('inv_parts/header_style_1.php', $data);
+                    // }
                     ?>
                 </div>
 
-                <div class="table-responsive mt15 pl15 pr15">
+                <!-- <div class="table-responsive mt15 pl15 pr15">
+                    <?php if($invoice_info->status != "terverifikasi" ) echo modal_anchor(get_uri("sales/s_invoices/item_modal_form"), "<i class='fa fa-plus-circle'></i> " . "Tambah Proyek", array("class" => "btn btn-default", "title" => "Tambah Proyek", "data-post-invoice_id" => $invoice_info->id)); ?>
+                    <div>
+                        <h4>Proyek</h4>
+                    </div>
                     <table id="invoice-item-table" class="display" width="100%">            
                     </table>
                 </div>
-
                 <div class="clearfix">
                     <div class="col-sm-8">
 
@@ -71,8 +71,42 @@
                     <div class="col-sm-4" id="invoice-total-section">
                         <?php $this->load->view("invoice/inv_total_section"); ?>
                     </div>
-                </div>
+                </div> -->
 
+                <div class="table-responsive mt15 pl15 pr15">
+                <!-- <?php echo modal_anchor(get_uri("sales/s_invoices/payment_modal_form"), "<i class='fa fa-plus-circle'></i> " . "Tambah Invoice", array("class" => "btn btn-default", "title" => "Tambah Invoice", "data-post-invoice_id" => $invoice_info->id)); ?> -->
+                <?php if ($count_payment >= $invoice_info->termin): ?>
+                    <button class="btn btn-default" onclick="alert('Ubah termin terlebih dahulu pada menu Edit Project!')">
+                        <i class='fa fa-plus-circle'></i> Tambah Invoice
+                    </button>
+                <?php elseif (!$invoice_info->inv_contract_date): ?>
+                    <button class="btn btn-default" onclick="alert('Isi Tanggal Kontrak Berakhir terlebih dahulu pada menu Edit Project!')">
+                        <i class='fa fa-plus-circle'></i> Tambah Invoice
+                    </button>
+                <?php else: ?>
+                    <?php echo modal_anchor(
+                        get_uri("sales/s_invoices/payment_modal_form"),
+                        "<i class='fa fa-plus-circle'></i> " . "Tambah Invoice",
+                        array("class" => "btn btn-default", "title" => "Tambah Invoice", "data-post-invoice_id" => $invoice_info->id)
+                    ); ?>
+                <?php endif; ?>
+                <?php echo modal_anchor(get_uri("sales/s_invoices/payment_modal_form_downloadpdf/" . $invoice_info->id), "<i class='fa fa-download'></i> " . "Download Invoices", array("class" => "btn btn-default","title" => "Download Invoice", "data-post-id" => $invoice_info->id)); ?>
+
+                    <div>
+                        <h4>Invoice</h4>
+                    </div>
+                    <table id="invoice-payment-table" class="display" width="100%">            
+                    </table>
+                </div>
+                <div class="clearfix">
+                    <div class="col-sm-8">
+
+                    </div>
+                    <div class="col-sm-4" id="invoice-total-section">
+                        <?php $this->load->view("invoice/inv_total_section_payment"); ?>
+                    </div>
+                </div>
+                <br>
             </div>
         </div>
 
@@ -95,8 +129,34 @@
             hideTools: true,
             columns: [
                 {title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"},
-                {title: 'Proyek'},
+                {title: 'Nama'},
                 {title: 'Harga', "class": "text-right w15p"},
+                {title: '<?php echo lang("total") ?>', "class": "text-right w15p"}
+            ],
+            onDeleteSuccess: function (result) {
+                $("#invoice-total-section").html(result.invoice_total_view);
+                if (typeof updateInvoiceStatusBar == 'function') {
+                    updateInvoiceStatusBar(result.invoice_id);
+                }
+            },
+            onUndoSuccess: function (result) {
+                $("#invoice-total-section").html(result.invoice_total_view);
+                if (typeof updateInvoiceStatusBar == 'function') {
+                    updateInvoiceStatusBar(result.invoice_id);
+                }
+            }
+        });
+        $("#invoice-payment-table").appTable({
+            source: '<?php echo_uri("sales/s_invoices/payment_list_data/". $invoice_info->id) ?>',
+            order: [[0, "asc"]],
+            hideTools: true,
+            columns: [
+                {title: '<i class="fa fa-bars"></i>', "class": "text-center option"},
+                {title: 'No. Invoices'},
+                {title: 'Tanggal Pembayaran'},
+                {title: 'Termin', "class": "text-right w15p"},
+                {title: 'Bukti'},
+                {title: 'Status', "class": "text-right w15p"},
                 {title: '<?php echo lang("total") ?>', "class": "text-right w15p"}
             ],
             onDeleteSuccess: function (result) {

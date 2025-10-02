@@ -1,4 +1,5 @@
 <?php
+require_once FCPATH . 'vendor/autoload.php'; // pastikan path benar
 
 /**
  * use this to print link location
@@ -22,8 +23,7 @@ if(!function_exists("printCoa")){
 
 if(!function_exists('checkJournal')){
 
-    //function checkJournal($project = 0,$code,$voucher_code,$date,$type,$description,$fid_coa,$debet,$credit){
-    function checkJournal($code,$voucher_code,$date,$type,$description,$fid_coa,$debet,$credit,$project = 0){
+    function checkJournal($project = 0,$code,$voucher_code,$date,$type,$description,$fid_coa,$debet,$credit){
         $html = "";
         $ci = get_instance();
          // $html = "<table class='table table-bordered'>";
@@ -813,6 +813,8 @@ if (!function_exists('get_s_invoices_making_data')) {
             }else{
                 $data['client_info'] = $ci->Master_Customers_model->get_one($data['invoice_info']->fid_cust);
             }
+
+            // print_r($invoice_info);exit;
             $data['invoice_items'] = $ci->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $invoice_id))->result();
             // $data['invoice_status_label'] = get_invoices_status_label($invoice_info);
             $data["invoice_total_summary"] = $ci->Sales_Invoices_model->get_invoices_total_summary($invoice_id);
@@ -822,6 +824,33 @@ if (!function_exists('get_s_invoices_making_data')) {
 
 }
 
+if (!function_exists('get_s_invoices_payments_making_data')) {
+
+    function get_s_invoices_payments_making_data($invoice_id,$invoice_payments_id,$invoice_termin = null) {
+        $ci = get_instance();
+        $invoice_info = $ci->Sales_Invoices_model->get_details(array("id" => $invoice_id))->row();
+        if ($invoice_info) {
+            $data['invoice_info'] = $invoice_info;
+            if($invoice_info->fid_cust){
+                $data['client_info'] = $ci->Master_Customers_model->get_one($data['invoice_info']->fid_cust);
+            }elseif($invoice_info->fid_custtt){
+                $data['client_info'] = $ci->Master_Customers_model->get_one($data['invoice_info']->fid_custtt);
+            }elseif($invoice_info->fid_custttt){
+                $data['client_info'] = $ci->Master_Customers_model->get_one($data['invoice_info']->fid_custttt);
+            }else{
+                $data['client_info'] = $ci->Master_Customers_model->get_one($data['invoice_info']->fid_cust);
+            }
+
+            $data['invoice_items'] = $ci->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $invoice_id))->result();
+            
+            $data['invoice_payments'] = $ci->Sales_InvoicesPayments_model->get_details(array("id" => $invoice_payments_id))->row();
+
+            $data["invoice_total_summary"] = $ci->Sales_Invoices_model->get_invoices_total_summary($invoice_id,$invoice_termin);
+            return $data;
+        }
+    }
+
+}
 if (!function_exists('get_s_payment_making_data')) {
 
     function get_s_payment_making_data($invoice_id) {
@@ -1053,7 +1082,7 @@ if (!function_exists('prepare_invoice_pdf')) {
             $invoice_data["mode"] = $mode;
 
             $html = $ci->load->view("invoices/invoice_pdf", $invoice_data, true);
-
+            
             if ($mode != "html") {
                 $ci->pdf->writeHTML($html, true, false, true, false, '');
             }
@@ -1154,7 +1183,6 @@ if (!function_exists('print_pdf')) {
 }
 
 
-
 if (!function_exists('prepare_s_invoice_pdf')) {
 
     function prepare_s_invoice_pdf($invoice_data, $mode = "download") {
@@ -1172,7 +1200,7 @@ if (!function_exists('prepare_s_invoice_pdf')) {
             $invoice_data["mode"] = $mode;
 
             $html = $ci->load->view("invoice/inv_pdf", $invoice_data, true);
-
+            
             if ($mode != "html") {
                 $ci->pdf->writeHTML($html, true, false, true, false, '');
             }
@@ -1195,6 +1223,106 @@ if (!function_exists('prepare_s_invoice_pdf')) {
     }
 
 }
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
+
+if (!function_exists('prepare_s_invoice_payments_pdf')) {
+
+    function prepare_s_invoice_payments_pdf($invoice_data, $mode = "download", $url = "inv_pdf") {
+        $ci = get_instance();
+        $ci->load->library('pdf');
+        $ci->pdf->setPrintHeader(false);
+        $ci->pdf->setPrintFooter(false);
+        $ci->pdf->SetCellPadding(1.5);
+        $ci->pdf->setImageScale(1.42);
+        $ci->pdf->AddPage();
+        $ci->pdf->SetFontSize(10);
+
+        if ($invoice_data) {
+            $invoice_data["mode"] = $mode;
+            $html = $ci->load->view("invoice/".$url, $invoice_data, true);
+            //print_r($invoice_data);exit;
+            $invoice_info = get_array_value($invoice_data, "invoice_info");
+            $pdf_file_name =  "INV#" . str_replace("/", "_", $invoice_info->code) . ".pdf";
+
+            if ($mode === "download") {
+
+                $options = new \Dompdf\Options();
+                $dompdf = new \Dompdf\Dompdf($options);
+                
+                $options->set('isRemoteEnabled', true);
+
+                $dompdf->loadHtml($html);
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+
+                // download ke browser
+                $dompdf->stream($pdf_file_name, ["Attachment" => true]);
+
+            } else if ($mode === "send_email") {
+                $temp_download_path = getcwd() . "/" . get_setting("temp_file_path") . $pdf_file_name;
+                $ci->pdf->Output($temp_download_path, "F");
+                return $temp_download_path;
+
+            } else if ($mode === "view") {
+                $ci->pdf->Output($pdf_file_name, "I");
+
+            } else if ($mode === "html") {
+                return $html;
+            }
+        }
+    }
+}
+
+if (!function_exists('prepare_s_invoice_receipts_pdf')) {
+
+    function prepare_s_invoice_receipts_pdf($invoice_data, $mode = "download", $url = "inv_pdf") {
+        $ci = get_instance();
+        $ci->load->library('pdf');
+        $ci->pdf->setPrintHeader(false);
+        $ci->pdf->setPrintFooter(false);
+        $ci->pdf->SetCellPadding(1.5);
+        $ci->pdf->setImageScale(1.42);
+        $ci->pdf->AddPage();
+        $ci->pdf->SetFontSize(10);
+
+        if ($invoice_data) {
+            $invoice_data["mode"] = $mode;
+            $html = $ci->load->view("invoice/".$url, $invoice_data, true);
+            //print_r($invoice_data);exit;
+            $invoice_info = get_array_value($invoice_data, "invoice_info");
+            $pdf_file_name =  "KWITANSI#" . str_replace("/", "_", $invoice_info->code) . ".pdf";
+
+            if ($mode === "download") {
+
+                $options = new \Dompdf\Options();
+                $dompdf = new \Dompdf\Dompdf($options);
+                
+                $options->set('isRemoteEnabled', true);
+
+                $dompdf->loadHtml($html);
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+
+                // download ke browser
+                $dompdf->stream($pdf_file_name, ["Attachment" => true]);
+
+            } else if ($mode === "send_email") {
+                $temp_download_path = getcwd() . "/" . get_setting("temp_file_path") . $pdf_file_name;
+                $ci->pdf->Output($temp_download_path, "F");
+                return $temp_download_path;
+
+            } else if ($mode === "view") {
+                $ci->pdf->Output($pdf_file_name, "I");
+
+            } else if ($mode === "html") {
+                return $html;
+            }
+        }
+    }
+}
+
 if (!function_exists('prepare_s_invoice_pdf_jalan')) {
 
     function prepare_s_invoice_pdf_jalan($invoice_data, $mode = "download_jalan") {
@@ -1828,11 +1956,11 @@ if(!function_exists("terbilang")){
       elseif ($x < 100)
         return terbilang($x / 10) . " puluh" . terbilang($x % 10);
       elseif ($x < 200)
-        return "seratus" . terbilang($x - 100);
+        return " seratus" . terbilang($x - 100);
       elseif ($x < 1000)
         return terbilang($x / 100) . " ratus" . terbilang($x % 100);
       elseif ($x < 2000)
-        return "seribu" . terbilang($x - 1000);
+        return " seribu" . terbilang($x - 1000);
       elseif ($x < 1000000)
         return terbilang($x / 1000) . " ribu" . terbilang($x % 1000);
       elseif ($x < 1000000000)
@@ -1942,5 +2070,91 @@ if (!function_exists('get_detail_salary')) {
             return $data;
         }
     }
+}
 
+if(!function_exists("get_code_jenis_customers")){
+    function get_code_jenis_customers($jenis = null, $bentuk = null) {
+        if ($jenis == 'DINAS')
+            return "01";
+        elseif ($jenis == 'SWASTA' && $bentuk == 'KOPERASI')
+            return "02";
+        elseif ($jenis == 'RUMAH SAKIT')
+            return "03";
+        elseif ($jenis == 'BUMN')
+            return "04";
+        elseif ($jenis == 'BUMD')
+            return "05";
+        elseif ($jenis == 'SWASTA' && $bentuk == 'PT')
+            return "06";
+        elseif ($jenis == 'SWASTA' && $bentuk == 'CV')
+            return "07";
+        elseif ($jenis == 'SEKOLAH')
+            return "08";
+        elseif ($jenis == 'SWASTA' && $bentuk == 'UD')
+            return "09";
+        elseif ($jenis == 'SWASTA' && $bentuk == 'FIRMA')
+            return "09";
+        // elseif ($bentuk == 'FIRMA')
+        //     return "09";
+        // elseif ($bentuk == 'UD')
+            // return "10";
+        else return "0";
+    }
+}
+
+if(!function_exists("generate_code_invoice_payment")){
+    function generate_code_invoice_payment($project_info = null, $post_data = null) {
+        $ci = get_instance();
+        $payment_date = date('ymd', strtotime($post_data['payment_date']));
+        $fid_cust = $project_info->fid_cust?? $project_info->fid_custtt ?? $project_info->fid_custttt;
+        
+        $customer = $ci->Master_Customers_model->get_details(array("id" => $fid_cust))->row();
+        
+        $payment_info = $ci->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $project_info->id))->result();
+        // $count_payment = count($payment_info) + 1;
+        $count_payment = str_pad(count($payment_info) + 1, 2, '0', STR_PAD_LEFT);
+
+        $code = 'INV/' . $payment_date . '/' . $customer->code . '/' . $count_payment;
+        // print_r($project_info['fid_sales_invoice']);exit;
+        return $code;
+    }
+}
+
+if(!function_exists("generate_code_receipt_payment")){
+    function generate_code_receipt_payment($invoice_info = null, $payment_date = null) {
+        $ci = get_instance();
+
+        $payment_year  = date('Y', strtotime($payment_date));
+        $payment_month  = date('n', strtotime($payment_date));
+        $month_roman = generate_month_roman($payment_date);
+        $all_payment = $ci->Sales_InvoicesPayments_model->get_details(array("payment_year"  => $payment_year,"payment_month" => $payment_month,"receipt_code_not_null" => true))->result();
+        $count_payment = str_pad(count($all_payment) + 1, 2, '0', STR_PAD_LEFT);
+
+        $code = $count_payment . '/016/CHAAKRA/' . $month_roman . '/' . $payment_year;
+
+        return $code;
+    }
+}
+
+if(!function_exists("generate_month_roman")){
+    function generate_month_roman($date) {
+        $monthMap = [
+            1  => 'I',
+            2  => 'II',
+            3  => 'III',
+            4  => 'IV',
+            5  => 'V',
+            6  => 'VI',
+            7  => 'VII',
+            8  => 'VIII',
+            9  => 'IX',
+            10 => 'X',
+            11 => 'XI',
+            12 => 'XII'
+        ];
+        
+        $bulanAngka  = date('n', strtotime($date)); // 1-12 tanpa leading zero
+        $month_roman = $monthMap[$bulanAngka];
+        return $month_roman;
+    }
 }

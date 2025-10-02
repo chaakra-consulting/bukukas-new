@@ -12,9 +12,21 @@ class Master_Customers_model extends Crud_model {
 
     function get_details($options = array()){
         $id = get_array_value($options, "id");
+        $jenis = get_array_value($options, "jenis");
+        $bentuk = get_array_value($options, "bentuk");
+        $codeIsNull = get_array_value($options, "code_is_null");
         $where = "";
         if ($id) {
-            $where = " AND id=$id";
+            $where .= " AND id=$id";
+        }
+        if ($jenis) {
+            $where .= " AND jenis='$jenis'";
+        }
+        if ($bentuk) {
+            $where .= " AND bentuk='$bentuk'";
+        }
+        if ($codeIsNull){
+            $where .= " AND code IS NOT NULL AND code <> ''";
         }
         $data = $this->db->query("SELECT * FROM $this->table WHERE  deleted = 0  ".$where." ORDER BY id DESC");
         return $data;

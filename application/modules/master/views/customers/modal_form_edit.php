@@ -38,7 +38,7 @@
             </div>
             <div class="form-group">
                 <label for="jenis" class="col-md-3">Jenis Perusahaan</label>
-                <div class=" col-md-8">
+                <div class="col-md-8">
                     <?php
                     echo form_dropdown(
                         "jenis",
@@ -47,13 +47,36 @@
                             "BUMN" => "BUMN",
                             "BUMD" => "BUMD",
                             "DINAS" => "DINAS",
-                            "SWASTA" => "SWASTA"
+                            "SWASTA" => "SWASTA",
+                            "SEKOLAH" => "SEKOLAH",
+                            "RUMAH SAKIT" => "RUMAH SAKIT",
                         ),
                         $model_info->jenis, 
                         "class='select2' id='jenis'"
                     );
                     ?>
                     <medium id="jenis-error" class="text-danger" style="display:none;">Mohon Diisi</medium>
+                </div>
+            </div>
+            <div class="form-group" id="bentuk-wrapper" style="display:none;">
+                <label for="bentuk" class="col-md-3">Bentuk Perusahaan</label>
+                <div class="col-md-8">
+                    <?php
+                    echo form_dropdown(
+                        "bentuk",
+                        array(
+                            "" => "-",
+                            "PT" => "PT",
+                            "CV" => "CV",
+                            "FIRMA" => "FIRMA",
+                            "UD" => "UD",
+                            "KOPERASI" => "KOPERASI",
+                        ),
+                        $model_info->bentuk, 
+                        "class='select2' id='bentuk'"
+                    );
+                    ?>
+                    <medium id="bentuk-error" class="text-danger" style="display:none;">Mohon Diisi</medium>
                 </div>
             </div>
 
@@ -82,7 +105,7 @@
 
             </div>
             <div class="form-group">
-                <label for="email" class=" col-md-3">Nama Kontak</label>
+                <label for="email" class=" col-md-3">Nama PJ</label>
                 <div class=" col-md-9">
                     <?php
                     echo form_input(array(
@@ -90,7 +113,7 @@
                         "name" => "email",
                         "value" => $model_info->email,
                         "class" => "form-control",
-                        "placeholder" => 'Nama Kontak',
+                        "placeholder" => 'Nama Penanggung Jawab',
                     ));
                     ?>
                 </div>
@@ -106,22 +129,6 @@
                         "class" => "form-control",
                         "data-rule-required" => true,
                     ));
-                    ?>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="gender_contact" class="col-md-3">Jenis Kelamin</label>
-                <div class="col-md-9">
-                    <?php
-                    echo form_dropdown(
-                        "gender_contact", 
-                        array(
-                            "Laki-Laki" => "Laki-laki", 
-                            "Perempuan" => "Perempuan"
-                        ), 
-                        isset($model_info->gender_contact) ? $model_info->gender_contact : "", 
-                        "class='select2 gender-select2'"
-                    );
                     ?>
                 </div>
             </div>
@@ -176,16 +183,50 @@
         });
         $("#code").focus();
 
+        function toggleBentuk() {
+            var jenis = $("#jenis").val();
+            if (jenis === "BUMN" || jenis === "BUMD" || jenis === "SWASTA") {
+                $("#bentuk-wrapper").show();
+                $("#bentuk").attr("required", true);
+            } else {
+                $("#bentuk-wrapper").hide();
+                $("#bentuk").removeAttr("required").val("");
+            }
+        }
+
+        toggleBentuk();
+
+        $("#jenis").change(function() {
+            toggleBentuk();
+        });
+
         $("#form-submit").click(function (e) {
-            //$("#master_customers-form").trigger('submit');
             e.preventDefault();
 
-            let jenis = $("#jenis").val();
+            let isValid = true;
 
+            let jenis = $("#jenis").val();
             if (jenis === "") {
                 $("#jenis-error").show();
+                isValid = false;
             } else {
                 $("#jenis-error").hide();
+            }
+
+            let bentuk = $("#bentuk").val();
+
+            if (jenis === "BUMN" || jenis === "BUMD" || jenis === "SWASTA") {
+                if (bentuk === "") {
+                    $("#bentuk-error").show();
+                    isValid = false;
+                } else {
+                    $("#bentuk-error").hide();
+                }
+            } else {
+                $("#bentuk-error").hide();
+            }
+
+            if (isValid) {
                 $("#master_customers-form").trigger('submit');
             }
         });

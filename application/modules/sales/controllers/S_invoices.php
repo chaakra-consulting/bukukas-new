@@ -8,9 +8,13 @@ class S_invoices extends MY_Controller {
     function __construct() {
         parent::__construct();
 
-        $this->load->model('Produksi_model');//tambahan
+        $this->load->model('Produksi_model');
         $this->load->model('sales/Sales_Invoices_model');
+        $this->load->model('sales/Master_Customers_model');
+        $this->load->model('sales/Master_Perusahaan_model');
+        $this->load->model('sales/Taxes_model');
         $this->load->model('sales/Sales_InvoicesItems_model');
+        $this->load->model('sales/Sales_InvoicesPayments_model');
   
            
     }
@@ -40,9 +44,8 @@ class S_invoices extends MY_Controller {
 
         $this->load->view('invoice/modal_form',$view_data);
     }
-
-    function modal_form_edit() {
-
+    function modal_form_edit()
+    {
         validate_submitted_data(array(
             "id" => "numeric"
         ));
@@ -51,75 +54,102 @@ class S_invoices extends MY_Controller {
         $options = array(
             "id" => $id,
         );
-         $view_data['taxes_dropdown'] = array("" => "-") + $this->Taxes_model->get_dropdown_list(array("value"));     
-         $view_data['model_info'] = $this->Sales_Invoices_model->get_details($options)->row();
-         $view_data['pers_dropdown'] = array("" => "-") + $this->Master_Perusahaan_model->get_dropdown_list(array("name"));
-         $view_data['clients_dropdown'] = array("" => "-") + $this->Master_Customers_model->get_dropdown_list(array("name"));
+        $view_data['taxes_dropdown'] = array("" => "-") + $this->Taxes_model->get_dropdown_list(array("value"));
+        $view_data['model_info'] = $this->Sales_Invoices_model->get_details($options)->row();
+        $view_data['item_info'] = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $id))->row();
+        $view_data['pers_dropdown'] = array("" => "-") + $this->Master_Perusahaan_model->get_dropdown_list(array("name"));
+        $view_data['clients_dropdown'] = array("" => "-") + $this->Master_Customers_model->get_dropdown_list(array("name"));
 
+        if ($view_data['model_info']->fid_cust) $fid_cust = $view_data['model_info']->fid_cust;
+        elseif ($view_data['model_info']->fid_custtt) $fid_cust = $view_data['model_info']->fid_custtt;
+        elseif ($view_data['model_info']->fid_custttt) $fid_cust = $view_data['model_info']->fid_custttt;
+        else $fid_cust = $view_data['model_info']->fid_cust;
+
+        $customer = $this->Master_Customers_model->get_details(array("id" => $fid_cust))->row();
+        $view_data['fid_cust'] = $fid_cust;
+        $view_data['name_cust'] = $customer->name;
+        $view_data['jenis_customers'] = $customer->jenis;
+        //$view_data['model_info'] = $this->Sales_Invoices_model->get_details($options)->row();
+        // print_r($view_data['item_info']);exit;
         $this->load->view('invoice/modal_form_edit', $view_data);
     }
+
     /* insert or update a client */
 
-    function add() {
-        $bukpot = $_FILES['code'];
-    
-        if (!empty($bukpot['name'])) {
-            // Proses upload foto
-            $config['upload_path']      = './assets/images/bukpot';
-            $config['allowed_types']    = 'jpg|png|gif|pdf';
-        
+    function add()
+    {
+        $bukpot = null;
+        if (!empty($_FILES['code']['name'])) {
+            $config['upload_path'] = './assets/images/bukpot';
+            $config['allowed_types'] = 'jpg|png|gif|pdf';
+            $config['max_size'] = '2048';
+
             $this->load->library('upload', $config);
-        
+
             if (!$this->upload->do_upload('code')) {
-                $error = array('error' => $this->upload->display_errors());
-                echo json_encode(array("success" => false, 'message' => $error['error']));
+                echo json_encode(array("success" => false, 'message' => $this->upload->display_errors()));
                 return;
-            } else {
-                $bukpot = $this->upload->data('file_name');
-                // Lakukan sesuatu dengan file yang diunggah
             }
-        } 
-        validate_submitted_data(array(
-            "fid_custt" => "required"
-        ));
-        $customers_id = $this->input->post('id');
+            $bukpot = $this->upload->data('file_name');
+        }
+
+        $this->form_validation->set_rules('fid_custt', 'Customer', 'required');
+        if ($this->form_validation->run() === FALSE) {
+            echo json_encode(array("success" => false, 'message' => validation_errors()));
+            return;
+        }
+
         $data = array(
             "code" => $bukpot,
+            "spk_code" => $this->input->post('spk_code'),
             "fid_custt" => $this->input->post('fid_custt'),
             "fid_custtt" => $this->input->post('fid_custtt'),
             "fid_custttt" => $this->input->post('fid_custttt'),
             "fid_cust" => $this->input->post('fid_cust'),
-            //"no_inv" => $this->input->post('no_inv'),
             "potongan" => $this->input->post('potongan'),
-            //"bukpot" => $this->input->post('bukpot'),
             "status" => 'draft',
             "paid" => "Not Paid",
+            "termin" => $this->input->post('termin'),
             "inv_date" => $this->input->post('inv_date'),
+            "inv_contract_date" => $this->input->post('inv_contract_date'),
             "fid_tax" => $this->input->post('fid_tax'),
             "created_at" => date("Y-m-d H:i:s")
         );
 
-            $save_id = $this->Sales_Invoices_model->save($data, $customers_id);
-            if($save_id){
-                    echo json_encode(array("success" => true, "data" => $this->_row_data($save_id), 'id' => $save_id,'message' => lang('record_saved')));
-                
-            }else{
-                 echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
-            }
-            // echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
-        
+        $save_id = $this->Sales_Invoices_model->save($data, $this->input->post('id'));
+
+        $item_id = $this->input->post('item_id');
+        $rate = unformat_currency($this->input->post('invoice_item_rate'));
+        $invoice_item_data = array(
+            "fid_invoices" => $save_id,
+            "title" => $this->input->post('invoice_item_title'),
+            "rate" => $rate,
+            "total" => $rate,
+        );
+        $invoice_item_id = $this->Sales_InvoicesItems_model->save($invoice_item_data, $item_id);
+        if ($save_id) {
+            echo json_encode(array(
+                "success" => true,
+                "data" => $this->_row_data($save_id),
+                'id' => $save_id,
+                'message' => lang('record_saved')
+            ));
+        } else {
+            echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
+        }
     }
 
-    function save() {
+    function save()
+    {
         $bukpot = $_FILES['bukpot'];
-    
+
         if (!empty($bukpot['name'])) {
             // Proses upload foto
-            $config['upload_path']      = './assets/images/bukpot';
-            $config['allowed_types']    = 'jpg|png|gif|pdf';
-        
+            $config['upload_path'] = './assets/images/bukpot';
+            $config['allowed_types'] = 'jpg|png|gif|pdf';
+
             $this->load->library('upload', $config);
-        
+
             if (!$this->upload->do_upload('bukpot')) {
                 $error = array('error' => $this->upload->display_errors());
                 echo json_encode(array("success" => false, 'message' => $error['error']));
@@ -128,7 +158,7 @@ class S_invoices extends MY_Controller {
                 $bukpot = $this->upload->data('file_name');
                 // Lakukan sesuatu dengan file yang diunggah
             }
-        } 
+        }
         $customers_id = $this->input->post('id');
 
 
@@ -139,37 +169,41 @@ class S_invoices extends MY_Controller {
         $order_id = $this->input->post('fid_order');
         $data = array(
             "code" => $bukpot,
+            "spk_code" => $this->input->post('spk_code'),
             "fid_custt" => $this->input->post('fid_custt'),
             "fid_custtt" => $this->input->post('fid_custtt'),
             "fid_custttt" => $this->input->post('fid_custttt'),
             "fid_cust" => $this->input->post('fid_cust'),
             "no_inv" => $this->input->post('no_inv'),
             "potongan" => $this->input->post('potongan'),
+            "termin" => $this->input->post('termin'),
             //"bukpot" => $this->input->post('bukpot'),
             "inv_date" => $this->input->post('inv_date'),
+            "inv_contract_date" => $this->input->post('inv_contract_date'),
             "fid_tax" => $this->input->post('fid_tax')
         );
 
-       
+
         $save_id = $this->Sales_Invoices_model->save($data, $customers_id);
         if ($save_id) {
 
-            echo json_encode(array("success" => true, "data" => $this->_row_data($save_id), 'id' => $save_id,'message' => lang('record_saved')));
+            echo json_encode(array("success" => true, "data" => $this->_row_data($save_id), 'id' => $save_id, 'message' => lang('record_saved')));
         } else {
             echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
         }
     }
     
-    function update() {
+    function update()
+    {
         $bukpot = $_FILES['bukpot'];
-    
+
         if (!empty($bukpot['name'])) {
             // Proses upload foto
-            $config['upload_path']      = './assets/images/bukpot';
-            $config['allowed_types']    = 'jpg|png|gif|pdf';
-        
+            $config['upload_path'] = './assets/images/bukpot';
+            $config['allowed_types'] = 'jpg|png|gif|pdf';
+
             $this->load->library('upload', $config);
-        
+
             if (!$this->upload->do_upload('bukpot')) {
                 $error = array('error' => $this->upload->display_errors());
                 echo json_encode(array("success" => false, 'message' => $error['error']));
@@ -178,9 +212,9 @@ class S_invoices extends MY_Controller {
                 $bukpot = $this->upload->data('file_name');
                 // Lakukan sesuatu dengan file yang diunggah
             }
-        } 
+        }
         $customers_id = $this->input->post('id');
-
+        // print_r($this->input->post('fid_tax'));exit;
         $data = array(
             "code" => $bukpot,
             "fid_custt" => $this->input->post('fid_custt'),
@@ -189,22 +223,34 @@ class S_invoices extends MY_Controller {
             "fid_cust" => $this->input->post('fid_cust'),
             "no_inv" => $this->input->post('no_inv'),
             "potongan" => $this->input->post('potongan'),
+            "termin" => $this->input->post('termin'),
             //"bukpot" => $bukpot,
             "inv_date" => $this->input->post('inv_date'),
+            "inv_contract_date" => $this->input->post('inv_contract_date'),
             "fid_tax" => $this->input->post('fid_tax')
         );
-
-       
         $save_id = $this->Sales_Invoices_model->save($data, $customers_id);
+
+        $item_id = $this->input->post('item_id');
+        $rate = unformat_currency($this->input->post('invoice_item_rate'));
+        $invoice_item_data = array(
+            // "fid_invoices" => $invoice_id,
+            "title" => $this->input->post('invoice_item_title'),
+            "rate" => $rate,
+            "total" => $rate,
+        );
+        $invoice_item_id = $this->Sales_InvoicesItems_model->save($invoice_item_data, $item_id);
+
         if ($save_id) {
 
-            echo json_encode(array("success" => true, "data" => $this->_row_data($save_id), 'id' => $save_id,'message' => lang('record_saved')));
+            echo json_encode(array("success" => true, "data" => $this->_row_data($save_id), 'id' => $save_id, 'message' => lang('record_saved')));
         } else {
             echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
         }
     }
 
-    function delete() {
+    function delete()
+    {
 
         validate_submitted_data(array(
             "id" => "required|numeric"
@@ -228,10 +274,11 @@ class S_invoices extends MY_Controller {
 
      /* verifikasi or undo a client */
 
-     function verifikasi($id){  
-            $this->Sales_Invoices_model->verifikasi($id);
-            redirect(base_url().'sales/s_invoices');
-        }
+    function verifikasi($id)
+    {
+        $this->Sales_Invoices_model->verifikasi($id);
+        redirect(base_url() . 'sales/s_invoices');
+    }
 
     /* list of clients, prepared for datatable  */
 
@@ -261,53 +308,62 @@ class S_invoices extends MY_Controller {
 
     /* prepare a row of client list table */
 
-   
     private function _make_row($data)
     {
         if (!$data) {
             return array();
         }
 
-        $query = $this->Master_Customers_model->get_details(array("id" => $data->fid_cust))->row();
-        $queryy = $this->Master_Customers_model->get_details(array("id" => $data->fid_custtt))->row();
-        $queryyy = $this->Master_Customers_model->get_details(array("id" => $data->fid_custttt))->row();
+        if ($data->fid_cust) $fid_cust = $data->fid_cust;
+        elseif ($data->fid_custtt) $fid_cust = $data->fid_custtt;
+        elseif ($data->fid_custttt) $fid_cust = $data->fid_custttt;
+        else $fid_cust = $data->fid_cust;
+
+        $query = $this->Master_Customers_model->get_details(array("id" => $fid_cust))->row();
         $persss = $this->Master_Perusahaan_model->get_details(array("id" => $data->fid_custt))->row();
         $taxes = $this->Taxes_model->get_details(array("id" => $data->fid_tax))->row();
+        $invoice_total_summary = $this->Sales_Invoices_model->get_invoices_total_summary($data->id);
         $itemss = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $data->id))->row();
+        $payment = $this->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $data->id))->result();
 
-        $potongan = 0;
-        $ppn = 0;
-        if ($itemss && is_numeric($data->potongan) && is_numeric($itemss->rate)) {
-            $potonganPersen = floatval($data->potongan);
-            $potongan = ($potonganPersen / 100) * floatval($itemss->rate);
-        }
-        if ($data->fid_tax == 0 && is_numeric($itemss->rate)) {
-            $ppn = (11 / 100) * floatval($itemss->rate);
-        }
-        $value = $this->Sales_Invoices_model->get_invoices_total_summary($data->id);
+        $count_payment_all = $data->termin ?? 0;
         $originalDate = $data->inv_date;
         $newDate = date("d-M-Y", strtotime($originalDate));
-        $totalsemua = $value->invoice_subtotal + $ppn + $potongan;
+
+        $potongan = $invoice_total_summary->potongan;
+        $ppn = $invoice_total_summary->tax;
+        $totalsemua = $invoice_total_summary->invoice_subtotal + $ppn + $potongan;
+        //$payment_done_subtotal = $originalDate < '2025-08-01' ? $totalsemua : $invoice_total_summary->payment_done_subtotal;
+        //->row();
+        $count_payment_terbayar = 0;
+        foreach ($payment as $p) {
+            if ($p->status == "terbayar") {
+                $count_payment_terbayar++;
+            }
+        }
+        $payment_status = ($count_payment_all != 0 && $count_payment_all == $count_payment_terbayar) ? 'Lunas' : $count_payment_terbayar . ' to ' . $count_payment_all;
+
         $row_data = array(
+            $data->spk_code ?? '-',
             $itemss->title,
-            ($data->fid_custt === 0 || $data->fid_custt === NULL) ? '' : $persss->name,
+            // ($data->fid_custt === 0 || $data->fid_custt === NULL) ? '' : $persss->name,
             $data->inv_date,
-            anchor(get_uri("assets/images/bukpot/" . $data->code), "#" . $data->code),
+            // anchor(get_uri("assets/images/bukpot/" . $data->code), "#" . $data->code),
             $this->_get_invoices_status_label($data),
-            to_currency($value->invoice_subtotal),
+            to_currency($invoice_total_summary->invoice_subtotal),
             to_currency($ppn),
             to_currency($potongan),
             to_currency($totalsemua),
-            ($data->fid_cust == "0") ? '' : $query->name,
-            ($data->fid_custtt == "0") ? '' : $queryy->name,
-            ($data->fid_custttt == "0") ? '' : $queryyy->name,
+            // to_currency($payment_done_subtotal),
+            $this->_get_all_payment_status_label($payment_status, true, $originalDate, $count_payment_all),
+            $query->jenis,
+            $query->name,
         );
         if ($data->is_verified == "0") {
             $row_data[] = modal_anchor(get_uri("sales/s_invoices/modal_form_edit/" . $data->id), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => "Edit Invoices"))
                 . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => "Delete Invoices", "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("sales/s_invoices/delete"), "data-action" => "delete"))
                 . anchor(get_uri("sales/s_invoices/verifikasi/") . $data->id, "<i class='fa fa-check'></i>", array("class" => "view", "title" => "Verifikasi Invoices", "data-post-id" => $data->id))
                 . anchor(get_uri("sales/s_invoices/view/") . $data->id, "<i class='fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id));
-
         }
         $row_data[] = anchor(get_uri("sales/s_invoices/view/") . $data->id, "<i class='fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id))
             . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => "Delete Invoices", "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("sales/s_invoices/delete"), "data-action" => "delete"));
@@ -315,52 +371,51 @@ class S_invoices extends MY_Controller {
         return $row_data;
     }
 
-    function view($id= 0){
-        
+    function view($id = 0)
+    {
         if ($id) {
             $view_data = get_s_invoices_making_data($id);
 
             if ($view_data) {
                 $view_data['invoice_status'] = $this->_get_invoices_status_label($view_data["invoice_info"], true);
-                
+
                 $view_data['invoice_status_label'] = $this->_get_invoices_status_label($view_data["invoice_info"]);
+
+                $view_data['item_info'] = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $id))->row();
+                $payment = $this->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $id))->result();
+                $view_data['count_payment'] = count($payment);
 
                 $this->template->rander("invoice/view", $view_data);
             } else {
                 show_404();
             }
-        }else{
+        } else {
             show_404();
         }
     }
 
      //prepare invoice status label 
-     private function _get_invoices_status_label($invoice_info, $return_html = true) {
+     private function _get_invoices_status_label($invoice_info, $return_html = true)
+    {
         // return get_order_status_label($data, $return_html);
         $invoice_status_class = "label-default";
         $status = "draft";
-        $now = get_my_local_time("Y-m-d");
-        if ($invoice_info->status == "draft" ) {
+        //$now = get_my_local_time("Y-m-d");
+        if ($invoice_info->status == "draft") {
             $invoice_status_class = "label-warning";
             $status = "Draft";
         } else if ($invoice_info->status == "sent") {
-            $invoice_status_class   = "label-success";
+            $invoice_status_class = "label-success";
             $status = "Sudah Terkirim";
-
-        }else if ($invoice_info->status == "posting") {
-            $invoice_status_class   = "label-info";
+        } else if ($invoice_info->status == "posting") {
+            $invoice_status_class = "label-info";
             $status = "Posting";
-
-        }
-        else if ($invoice_info->status == "paid") {
-            $invoice_status_class   = "label-primary";
+        } else if ($invoice_info->status == "paid") {
+            $invoice_status_class = "label-primary";
             $status = "Dibayarkan";
-
-        }
-        else if ($invoice_info->status == "terverifikasi") {
-            $invoice_status_class   = "label-success";
+        } else if ($invoice_info->status == "terverifikasi") {
+            $invoice_status_class = "label-success";
             $status = "Terverifikasi";
-
         }
         $invoice_status = "<span class='label $invoice_status_class large'>" . $status . "</span>";
         if ($return_html) {
@@ -369,10 +424,9 @@ class S_invoices extends MY_Controller {
             return $status;
         }
     }
-    
 
-
-    function item_modal_form() {
+    function item_modal_form()
+    {
 
         validate_submitted_data(array(
             "id" => "numeric"
@@ -381,28 +435,29 @@ class S_invoices extends MY_Controller {
         if (!$invoice_id) {
             $invoice_id = $view_data['model_info']->fid_invoices;
         }
-        $invoice_id = $this->input->post('invoice_id');  
+        $invoice_id = $this->input->post('invoice_id');
         $view_data['invoice_id'] = $invoice_id;
         $this->load->view('invoice/item_modal_form', $view_data);
     }
-    function item_modal_form_edit() {
+    function item_modal_form_edit()
+    {
 
         validate_submitted_data(array(
             "id" => "numeric"
         ));
         $view_data['model_info'] = $this->Sales_InvoicesItems_model->get_one($this->input->post('id'));
         //if (!$invoice_id) {
-          //  $invoice_id = $view_data['model_info']->fid_invoices;
+        //  $invoice_id = $view_data['model_info']->fid_invoices;
         //}
         //$invoice_id = $this->input->post('invoice_id');  
-       // $view_data['invoice_id'] = $invoice_id;
+        // $view_data['invoice_id'] = $invoice_id;
         $this->load->view('invoice/item_modal_form_edit', $view_data);
     }
 
-
     /* add or edit an invoice item */
 
-    function save_item() {
+    function save_item()
+    {
 
         validate_submitted_data(array(
             "id" => "numeric",
@@ -413,7 +468,7 @@ class S_invoices extends MY_Controller {
 
         $id = $this->input->post('id');
         $rate = unformat_currency($this->input->post('invoice_item_rate'));
-        $desc=$this->input->post('invoice_item_title');
+        $desc = $this->input->post('invoice_item_title');
         //echo $this->db->last_query();exit();		
         $invoice_item_data = array(
             "fid_invoices" => $invoice_id,
@@ -421,9 +476,9 @@ class S_invoices extends MY_Controller {
             "rate" => $rate,
             "total" => $rate,
         );
-        
+
         $invoice_item_id = $this->Sales_InvoicesItems_model->save($invoice_item_data, $id);
-        
+
         if ($invoice_item_id) {
             echo json_encode(array(
                 "success" => true,
@@ -566,6 +621,554 @@ class S_invoices extends MY_Controller {
         );
 
 
+        }
+    }
+
+    function payment_list_data_all($start_date = false, $end_date = false)
+    {
+        if (!$start_date)
+            $start_date = date("Y") . '-01-01';
+        if (!$end_date)
+            $end_date = date("Y-m-d");
+
+        $list_data = $this->Sales_Invoices_model->get_details(array('start_date' => $start_date, 'end_date' => $end_date))->result();
+        $result = array();
+        foreach ($list_data as $data) {
+            $result[] = $this->_make_row_payment_all($data);
+        }
+        echo json_encode(array("data" => $result));
+    }
+
+    private function _make_row_payment_all($data)
+    {
+        if (!$data) {
+            return array();
+        }
+
+        $query = $this->Master_Customers_model->get_details(array("id" => $data->fid_cust))->row();
+        $queryy = $this->Master_Customers_model->get_details(array("id" => $data->fid_custtt))->row();
+        $queryyy = $this->Master_Customers_model->get_details(array("id" => $data->fid_custttt))->row();
+        $persss = $this->Master_Perusahaan_model->get_details(array("id" => $data->fid_custt))->row();
+        $taxes = $this->Taxes_model->get_details(array("id" => $data->fid_tax))->row();
+        $itemss = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $data->id))->row();
+
+        $potongan = 0;
+        $ppn = 0;
+        if ($itemss && is_numeric($data->potongan) && is_numeric($itemss->rate)) {
+            $potonganPersen = floatval($data->potongan);
+            $potongan = ($potonganPersen / 100) * floatval($itemss->rate);
+        }
+        if ($data->fid_tax == 0 && is_numeric($itemss->rate)) {
+            $ppn = (11 / 100) * floatval($itemss->rate);
+        }
+
+        $value = $this->Sales_Invoices_model->get_invoices_total_summary($data->id);
+        $originalDate = $data->inv_date;
+        $newDate = date("d-M-Y", strtotime($originalDate));
+        $totalsemua = $value->invoice_total + $ppn + $potongan;
+        $row_data = array(
+            $itemss->title,
+            ($data->fid_custt === 0 || $data->fid_custt === NULL) ? '' : $persss->name,
+            $data->inv_date,
+            anchor(get_uri("assets/images/bukpot/" . $data->code), "#" . $data->code),
+            $this->_get_invoices_status_label($data),
+            to_currency($value->invoice_total),
+            to_currency($ppn),
+            to_currency($potongan),
+            to_currency($totalsemua),
+            ($data->fid_cust == "0") ? '' : $query->name,
+            ($data->fid_custtt == "0") ? '' : $queryy->name,
+            ($data->fid_custttt == "0") ? '' : $queryyy->name,
+        );
+        if ($data->is_verified == "0") {
+            $row_data[] = modal_anchor(get_uri("sales/s_invoices/modal_form_edit/" . $data->id), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => "Edit Invoices"))
+                . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => "Delete Invoices", "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("sales/s_invoices/delete"), "data-action" => "delete"))
+                . anchor(get_uri("sales/s_invoices/verifikasi/") . $data->id, "<i class='fa fa-check'></i>", array("class" => "view", "title" => "Verifikasi Invoices", "data-post-id" => $data->id))
+                . anchor(get_uri("sales/s_invoices/view/") . $data->id, "<i class='fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id));
+        }
+        $row_data[] = anchor(get_uri("sales/s_invoices/view/") . $data->id, "<i class='fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id))
+            . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => "Delete Invoices", "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("sales/s_invoices/delete"), "data-action" => "delete"));
+
+        return $row_data;
+    }
+
+    function payment_list_data($invoice_id = 0)
+    {
+
+        $list_data = $this->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $invoice_id))->result();
+        $count_list_data = count($list_data);
+
+        $result = array();
+        foreach ($list_data as $index => $data) {
+            $data->count = $index + 1;
+            $row = $this->_make_payment_row($data);
+            $result[] = $row;
+        }
+
+        echo json_encode(array("data" => $result));
+    }
+
+    function payment_modal_form_receipt($id)
+    {
+        $invoice_id = $this->input->post('invoice_id');
+        $invoice_termin = $this->input->post('count');
+        $view_data['model_info'] = $this->Sales_InvoicesPayments_model->get_details(array("id" => $id))->row();
+
+        $invoicePayments = $this->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $invoice_id))->result();
+        // $count = count($invoicePayments);
+        // $view_data['invoice_pembayaran'] = $count > 1 ? 'termin' : 'all';
+
+        $view_data['id'] = $id;
+        $view_data['invoice_id'] = $invoice_id;
+        $view_data['invoice_termin'] = $invoice_termin;
+
+        $view_data['invoice_info'] = $this->Sales_Invoices_model->get_details(array("id" => $invoice_id))->row();
+        $view_data['invoice_pembayaran'] = $view_data['invoice_info']->termin > 1 ? 'termin' : 'all';
+
+        $view_data['invoice_items_info'] = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $invoice_id))->row();
+
+        // print_r($view_data['invoice_pembayaran']);exit;
+
+        $this->load->view('invoice/payment_modal_form_receipt', $view_data);
+    }
+
+    function preview_receipt()
+    {
+        $invoice_id = $this->input->post('invoice_id');
+        $invoice_termin = $this->input->post('invoice_termin');
+        $receipt_type = $this->input->post('receipt_type');
+        $invoice_payment = $this->Sales_InvoicesPayments_model->get_details(array("id" => $this->input->post('id')))->row();
+        $invoice_payment_id = $invoice_payment->id;
+        $invoice_payment_date = $invoice_payment->payment_date;
+        $receipt_code = $invoice_payment->receipt_code;
+        // print_r($this->input->post());exit;
+        if ($invoice_id) {
+            $view_data = get_s_invoices_payments_making_data($invoice_id, $invoice_payment_id, $invoice_termin);
+            $view_data['model_info'] = $invoice_payment;
+
+            $view_data['post_data'] = (object)$this->input->post();
+            $url = 'inv_pdf_receipt';
+
+            $view_data['show_close_preview'] = true;
+
+            $view_data['invoice_id'] = $invoice_id;
+            $view_data['payment_methods'] = "";
+
+            if (!$receipt_code) {
+                $receipt_code = generate_code_receipt_payment($view_data['invoice_info'], $invoice_payment_date);
+                $payment_item_data = array(
+                    "receipt_code" => $receipt_code,
+                );
+                $this->Sales_InvoicesPayments_model->save($payment_item_data, $this->input->post('id'));
+            }
+            // $parts = explode('/', $receipt_code);
+            // if (!empty($parts[0])) {
+            //     array_splice($parts, 1, 0, $receipt_type);
+            // }
+            $view_data['receipt_code'] = $receipt_code;
+
+            $view_data['invoice_preview'] = prepare_s_invoice_receipts_pdf($view_data, "html", $url);
+
+            $view_data['invoice_status_label'] = $this->_get_invoices_status_label($view_data["invoice_info"]);
+
+            $this->template->rander("invoice/inv_preview_receipt", $view_data);
+        } else {
+            show_404();
+        }
+    }
+
+    function download_pdf_receipt()
+    {
+        $invoice_id = $this->input->post('invoice_id');
+        $invoice_termin = $this->input->post('invoice_termin');
+        $receipt_type = $this->input->post('receipt_type');
+        $invoice_payment = $this->Sales_InvoicesPayments_model->get_details(array("id" => $this->input->post('id')))->row();
+        $invoice_payment_id = $invoice_payment->id;
+        $invoice_payment_date = $invoice_payment->payment_date;
+        $receipt_code = $invoice_payment->receipt_code;
+        $url = 'inv_pdf_receipt';
+
+        if ($invoice_id) {
+            $view_data = get_s_invoices_payments_making_data($invoice_id, $invoice_payment_id, $invoice_termin);
+
+            if (!$receipt_code) {
+                $receipt_code = generate_code_receipt_payment($view_data['invoice_info'], $invoice_payment_date);
+                $payment_item_data = array(
+                    "receipt_code" => $receipt_code,
+                );
+                $this->Sales_InvoicesPayments_model->save($payment_item_data, $this->input->post('id'));
+            }
+            // $parts = explode('/', $receipt_code);
+            // if (!empty($parts[0])) {
+            //     array_splice($parts, 1, 0, $receipt_type);
+            // }
+            $view_data['receipt_code'] = $receipt_code;
+
+            $view_data['model_info'] = $invoice_payment;
+            $view_data['post_data'] = (object)$this->input->post();
+            // $this->_check_invoice_access_permission($invoice_data);         
+
+            prepare_s_invoice_receipts_pdf($view_data, "download", $url);
+        } else {
+            show_404();
+        }
+    }
+
+    function payment_modal_form_downloadpdf($id)
+    {
+        $view_data['model_info'] = $this->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $id))->row();
+
+        $invoicePayments = $this->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $id))->result();
+        // $count = count($invoicePayments);
+        // $view_data['invoice_pembayaran'] = $count > 1 ? 'termin' : 'all';
+
+        if ($view_data['model_info']) {
+            $view_data['id'] = $view_data['model_info']->id;
+            $view_data['invoice_id'] = $id;
+        } else {
+            $view_data['id'] = 0;
+            $view_data['invoice_id'] = $id;
+        }
+
+        $view_data['invoice_info'] = $this->Sales_Invoices_model->get_details(array("id" => $id))->row();
+
+        $view_data['invoice_pembayaran'] = $view_data['invoice_info']->termin  > 1 ? 'termin' : 'all';
+
+        $view_data['invoice_items_info'] = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $id))->row();
+
+        // print_r($view_data['invoice_info']);exit;
+
+        $this->load->view('invoice/payment_modal_form_downloadpdf', $view_data);
+    }
+
+    function preview_payment()
+    {
+        $invoice_id = $this->input->post('invoice_id');
+        $invoice_termin = $this->input->post('invoice_termin');
+        $invoice_payment = $this->Sales_InvoicesPayments_model->get_details(array("id" => $this->input->post('id')))->row();
+        $invoice_payment_id = $invoice_payment->id;
+        // print_r($invoice_termin);exit;
+        if ($invoice_id) {
+
+            $view_data = get_s_invoices_payments_making_data($invoice_id, $invoice_payment_id, $invoice_termin);
+            $view_data['model_info'] = $invoice_payment;
+
+            $view_data['post_data'] = (object)$this->input->post();
+            $url = 'inv_pdf_payment';
+
+            $view_data['invoice_preview'] = prepare_s_invoice_payments_pdf($view_data, "html", $url);
+
+            $view_data['show_close_preview'] = true;
+
+            $view_data['invoice_id'] = $invoice_id;
+            $view_data['payment_methods'] = "";
+
+            $view_data['invoice_status_label'] = $this->_get_invoices_status_label($view_data["invoice_info"]);
+
+            $this->template->rander("invoice/inv_preview_payment", $view_data);
+        } else {
+            show_404();
+        }
+    }
+
+    function download_pdf_payment()
+    {
+        $invoice_id = $this->input->post('invoice_id');
+        $invoice_termin = $this->input->post('invoice_termin');
+        $invoice_payment = $this->Sales_InvoicesPayments_model->get_details(array("id" => $this->input->post('id')))->row();
+        $invoice_payment_id = $invoice_payment->id;
+        $url = 'inv_pdf_payment';
+
+        if ($invoice_id) {
+            $view_data = get_s_invoices_payments_making_data($invoice_id, $invoice_payment_id, $invoice_termin);
+            $view_data['model_info'] = $invoice_payment;
+            $view_data['post_data'] = (object)$this->input->post();
+            // $this->_check_invoice_access_permission($invoice_data);           
+            prepare_s_invoice_payments_pdf($view_data, "download", $url);
+        } else {
+            show_404();
+        }
+    }
+
+    function payment_modal_form_verifikasi()
+    {
+        $payments = $this->Sales_InvoicesPayments_model
+            ->get_details(array(
+                "id" => $this->input->post('id')
+            ));
+        $view_data['model_info'] = $payments->row();
+        // $view_data['invoice_info'] = $this->Sales_Invoices_model->get_one($this->input->post('invoice_id'));
+        $view_data['invoice_id'] = $this->input->post('invoice_id');
+
+        $this->load->view('invoice/payment_modal_form_verifikasi', $view_data);
+    }
+
+    function payment_verifikasi()
+    {
+        $id = $this->input->post('id');
+        $fid_sales_invoice = $this->input->post('fid_sales_invoice');
+        $uploaded_name = null;
+    
+        if (!empty($_FILES['bukti']['name'])) {
+            $config['upload_path']   = './assets/images/verifikasi/';
+            $config['allowed_types'] = 'jpg|jpeg|png|gif|pdf';
+    
+            $this->load->library('upload', $config);
+    
+            if (!$this->upload->do_upload('bukti')) {
+                $error = $this->upload->display_errors();
+                echo json_encode(array("success" => false, "message" => $error));
+                return;
+            } else {
+                $uploaded_name = $this->upload->data('file_name');
+            }
+        }
+    
+        $data = array(
+            "bukti"  => $uploaded_name,
+            "status" => 'terbayar',
+        );
+
+        $payment_item_id = $this->Sales_InvoicesPayments_model->verifikasi($data, $id);
+
+        if ($payment_item_id) {
+            echo json_encode(array(
+                "success" => true,
+                "data"    => $this->_make_payment_row($payment_item_id),
+                "id"      => $payment_item_id,
+                "message" => lang('record_saved')
+            ));
+        } else {
+            echo json_encode(array("success" => false, "message" => lang('error_occurred')));
+        }        
+       // redirect(base_url('sales/s_invoices/view/' . $fid_sales_invoice));
+    }
+
+    function payment_delete()
+    {
+        validate_submitted_data(array(
+            "id" => "required|numeric"
+        ));
+
+        $id = $this->input->post('id');
+        if ($this->input->post('undo')) {
+            if ($this->Sales_InvoicesPayments_model->delete($id, true)) {
+                echo json_encode(array("success" => true, "data" => $this->_payment_row_data($id), "message" => lang('record_undone')));
+            } else {
+                echo json_encode(array("success" => false, lang('error_occurred')));
+            }
+        } else {
+            if ($this->Sales_InvoicesPayments_model->delete($id)) {
+                echo json_encode(array("success" => true, 'message' => lang('record_deleted')));
+            } else {
+                echo json_encode(array("success" => false, 'message' => lang('record_cannot_be_deleted')));
+            }
+        }
+    }
+
+    function payment_modal_form_edit()
+    {
+        validate_submitted_data(array(
+            "id" => "numeric"
+        ));
+        $view_data['model_info'] = $this->Sales_InvoicesPayments_model->get_details(array("id" => $this->input->post('id')))->row();
+        $view_data['invoice_info'] = $this->Sales_Invoices_model->get_one($view_data['model_info']->fid_sales_invoice);
+        $view_data['payment_all'] = $this->Sales_InvoicesPayments_model->get_details(array("id" => $this->input->post('id')))->result();
+        $view_data["invoice_total_summary"] = $this->Sales_Invoices_model->get_invoices_total_summary($view_data['model_info']->fid_sales_invoice, $this->input->post('count'));
+        // print_r($view_data['model_info']->fid_sales_invoice);exit;
+        $view_data['maks_pembayaran'] = ($view_data["invoice_total_summary"]->invoice_total - $view_data["invoice_total_summary"]->payment_invoice_total) + $view_data['model_info']->total;
+
+        $this->load->view('invoice/payment_modal_form_edit', $view_data);
+    }
+
+    function payment_save_edit()
+    {
+        validate_submitted_data(array(
+            "id" => "numeric",
+        ));
+
+        //$invoice_id = $this->input->post('invoice_id');
+        $id = $this->input->post('id');
+        $termin = $this->input->post('termin');
+        $total = unformat_currency($this->input->post('total'));
+        $payment_date = $this->input->post('payment_date');
+
+        $old_data = $this->Sales_InvoicesPayments_model
+            ->get_details(array("id" => $id))
+            ->row();
+
+        $invoice_code = $old_data->invoice_code;
+        if ($payment_date !== $old_data->payment_date) {
+            $parts = explode('/', $invoice_code);
+            if (isset($parts[1])) {
+                $parts[1] = date('ymd', strtotime($payment_date));
+                $invoice_code = implode('/', $parts);
+            }
+        }
+
+        $payment_item_data = array(
+            //"fid_invoices" => $invoice_id,
+            "invoice_code" => $invoice_code,
+            "termin" => $termin,
+            "total" => $total,
+            "payment_date" => $payment_date,
+        );
+
+        $payment_item_id = $this->Sales_InvoicesPayments_model->save($payment_item_data, $id);
+
+        if ($payment_item_id) {
+            echo json_encode(array(
+                "success" => true,
+                "data" => $this->_make_payment_row($payment_item_id),
+                'id' => $payment_item_id,
+                'message' => lang('record_saved')
+            ));
+        } else {
+            echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
+        }
+    }
+    function payment_modal_form()
+    {
+        $payments = $this->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $this->input->post('invoice_id')));
+        $view_data['model_info'] = $payments->row();
+        $count = count($payments->result());
+        // print_r($count);exit;
+        $view_data['invoice_info'] = $this->Sales_Invoices_model->get_one($this->input->post('invoice_id'));
+
+        $view_data['invoice_id'] = $this->input->post('invoice_id');
+        $view_data["invoice_total_summary"] = $this->Sales_Invoices_model->get_invoices_total_summary($this->input->post('invoice_id'), $count);
+        $this->load->view('invoice/payment_modal_form', $view_data);
+        // $this->load->view('invoice/payment_modal_form');
+    }
+
+    function payment_add()
+    {
+        $id = $this->input->post('id');
+        //$invoice_code = $this->input->post('invoice_code');
+        //$termin = $this->input->post('termin');
+        $total = unformat_currency($this->input->post('total'));
+        $payment_date = $this->input->post('payment_date');
+        $fid_sales_invoice = $this->input->post('fid_sales_invoice');
+
+        $project_info = $this->Sales_Invoices_model->get_one($this->input->post('fid_sales_invoice'));
+        $invoice_code = generate_code_invoice_payment($project_info, $this->input->post());
+
+        $data = array(
+            "fid_sales_invoice" => $fid_sales_invoice,
+            "invoice_code" => $invoice_code,
+            "termin" => '',
+            "total" => $total,
+            "payment_date" => $payment_date,
+            "status" => 'belum-terbayar',
+            "deleted" => 0,
+            // "created_at" => date("Y-m-d H:i:s")
+        );
+
+        $save_id = $this->Sales_InvoicesPayments_model->save($data, $id);
+        if ($save_id) {
+            echo json_encode(array(
+                "success" => true,
+                "data" => $this->_make_payment_row($save_id),
+                'id' => $save_id,
+                'message' => lang('record_saved')
+            ));
+        } else {
+            echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
+        }
+    }
+
+    private function _make_payment_row($data)
+    {
+        $action_buttons = modal_anchor(
+            get_uri("sales/s_invoices/payment_modal_form_edit"),
+            "<i class='fa fa-pencil'></i>",
+            array("class" => "edit", "title" => lang('edit'), "data-post-id" => $data->id, "data-post-count" => $data->count)
+        );
+
+        if ($data->status == 'belum-terbayar') {
+            $action_buttons .= modal_anchor(
+                get_uri("sales/s_invoices/payment_modal_form_verifikasi"),
+                "<i class='fa fa-check'></i>",
+                array("class" => "view", "title" => "Verifikasi Payment", "data-post-id" => $data->id, "data-post-invoice_id" => $data->fid_sales_invoice)
+            );
+        }
+
+        $action_buttons .= js_anchor(
+            "<i class='fa fa-times fa-fw'></i>",
+            array(
+                'title' => "Delete Payments",
+                "class" => "delete",
+                "data-id" => $data->id,
+                "data-action-url" => get_uri("sales/s_invoices/payment_delete"),
+                "data-action" => "delete"
+            )
+        );
+
+        $action_buttons .= modal_anchor(
+            get_uri("sales/s_invoices/payment_modal_form_receipt/") . $data->id,
+            "<i class='fa fa-download'></i>",
+            array("class" => "receipt", "title" => lang('receipt'), "data-post-id" => $data->id, "data-post-invoice_id" => $data->fid_sales_invoice, "data-post-count" => $data->count)
+        );
+
+        return array(
+            $action_buttons,
+            $data->invoice_code,
+            $data->payment_date,
+            $data->count,
+            $data->bukti ? "<a href='" . base_url('assets/images/verifikasi/' . $data->bukti) . "' target='_blank' style='text-decoration: underline;'>Lihat File</a>" : "-",
+            $this->_get_payments_status_label($data),
+            to_currency($data->total),
+        );
+    }
+
+    /* funtions */
+    
+    private function _get_payments_status_label($payment_info, $return_html = true)
+    {
+        // return get_order_status_label($data, $return_html);
+        $payment_status_class = "label-default";
+        $status = "draft";
+        $now = get_my_local_time("Y-m-d");
+        if ($payment_info->status == "belum-terbayar") {
+            $payment_status_class = "label-danger";
+            $status = "Belum Terbayar";
+        } else if ($payment_info->status == "terbayar") {
+            $payment_status_class = "label-success";
+            $status = "Terbayar";
+        }
+
+        $payment_status = "<span class='label $payment_status_class large'>" . $status . "</span>";
+        if ($return_html) {
+            return $payment_status;
+        } else {
+            return $status;
+        }
+    }
+
+    private function _get_all_payment_status_label($payment_status, $return_html = true, $date = null, $count_payment_all = 0)
+    {
+        // return get_order_status_label($data, $return_html);
+        $payment_status_class = "label-default";
+        $status = "draft";
+        $now = get_my_local_time("Y-m-d");
+        if ($payment_status == 'Lunas') {
+            $payment_status_class = "label-success";
+            $status = "Lunas";
+        } else {
+            if ($date < '2025-09-01' && $count_payment_all == 0) {
+                $payment_status_class = "label-success";
+                $status = "Lunas";
+            } else {
+                $payment_status_class = "label-danger";
+                $status = $payment_status;
+            }
+        }
+
+        $payment_status = "<span class='label $payment_status_class large'>" . $status . "</span>";
+        if ($return_html) {
+            return $payment_status;
+        } else {
+            return $status;
         }
     }
 
@@ -866,19 +1469,8 @@ class S_invoices extends MY_Controller {
                     echo checkJournal($fid_project,$code,$voucher_code,$date,$type,"HPP - ".$key->title,$key->lawan_hpp,0,$key->basic_price);
                 }*/
 
-                
              }
-             
-                 
-            
-            
-
-               
-            
-            
-        
     }
-
 }
 
 /* End of file clients.php */

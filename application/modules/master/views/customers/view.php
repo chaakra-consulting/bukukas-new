@@ -18,7 +18,7 @@
                     ?>
                 </div>
             </div>
-        <div class="form-group">
+            <div class="form-group">
                 <label for="name" class=" col-md-3">Nama Instansi</label>
                 <div class=" col-md-9">
                     <?php
@@ -34,7 +34,38 @@
                     ?>
                 </div>
             </div>
-            
+            <div class="form-group">
+                <label for="jenis" class="col-md-3">Jenis Perusahaan</label>
+                <div class="col-md-9">
+                <?php
+                    echo form_input(array(
+                        "id" => "name",
+                        "name" => "name",
+                        "value" => $model_info->jenis,
+                        "class" => "form-control",
+                        "autofocus" => true,
+                        "readonly" => true,
+                        "data-rule-required" => true
+                    ));
+                    ?>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="bentuk" class="col-md-3">Bentuk Perusahaan</label>
+                <div class="col-md-9">
+                <?php
+                    echo form_input(array(
+                        "id" => "name",
+                        "name" => "name",
+                        "value" => $model_info->bentuk ?? '-',
+                        "class" => "form-control",
+                        "autofocus" => true,
+                        "readonly" => true,
+                        "data-rule-required" => true
+                    ));
+                    ?>
+                </div>
+            </div>
             <div class="form-group">
                 <label for="address" class=" col-md-3">Alamat</label>
                 <div class=" col-md-9">
@@ -51,7 +82,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="email" class=" col-md-3">Nama Kontak</label>
+                <label for="email" class=" col-md-3">Nama PJ</label>
                 <div class=" col-md-9">
                     <?php
                     echo form_input(array(
@@ -72,21 +103,6 @@
                         "id" => "contact",
                         "name" => "contact",
                         "value" => $model_info->contact,
-                        "class" => "form-control",
-                        "data-rule-required" => true,
-                        "readonly" => true
-                    ));
-                    ?>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="gender_contact" class=" col-md-3">Jenis Kelammin</label>
-                <div class=" col-md-9">
-                    <?php
-                    echo form_input(array(
-                        "id" => "gender_contact",
-                        "name" => "gender_contact",
-                        "value" => $model_info->gender_contact,
                         "class" => "form-control",
                         "data-rule-required" => true,
                         "readonly" => true

@@ -306,3 +306,41 @@ if (!function_exists('get_international_currency_code_dropdown')) {
     }
 
 };
+
+/**
+ * get dropdown list fro international currency code
+ * 
+ * @return array
+ */
+if (!function_exists('to_terbilang')) {
+
+    function to_terbilang($angka) {
+        $angka = abs($angka);
+        $baca = array("", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam",
+            "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas");
+        $hasil = "";
+    
+        if ($angka < 12) {
+            $hasil = " " . $baca[$angka];
+        } else if ($angka < 20) {
+            $hasil = terbilang($angka - 10) . " Belas";
+        } else if ($angka < 100) {
+            $hasil = terbilang($angka / 10) . " Puluh" . terbilang($angka % 10);
+        } else if ($angka < 200) {
+            $hasil = " Seratus" . terbilang($angka - 100);
+        } else if ($angka < 1000) {
+            $hasil = terbilang($angka / 100) . " Ratus" . terbilang($angka % 100);
+        } else if ($angka < 2000) {
+            $hasil = " Seribu" . terbilang($angka - 1000);
+        } else if ($angka < 1000000) {
+            $hasil = terbilang($angka / 1000) . " Ribu" . terbilang($angka % 1000);
+        } else if ($angka < 1000000000) {
+            $hasil = terbilang($angka / 1000000) . " Juta" . terbilang($angka % 1000000);
+        } else if ($angka < 1000000000000) {
+            $hasil = terbilang($angka / 1000000000) . " Milyar" . terbilang(fmod($angka, 1000000000));
+        } else if ($angka < 1000000000000000) {
+            $hasil = terbilang($angka / 1000000000000) . " Triliun" . terbilang(fmod($angka, 1000000000000));
+        }
+        return ucwords($hasil);
+    }
+};
