@@ -66,7 +66,7 @@
                                     <td><?php echo $row->title; ?></td>
                                     <?php
                                     
-                                    $isComplete = ($row->termin_1 == ($row->termin_all ?? 0));
+                                    $isComplete = (($row->termin_1 == $row->termin_all) && ($row->termin_all ?? 0) > 0);
                                     $isAutoLunas = ($row->inv_date < '2025-09-01' && ($row->termin_all ?? 0) == 0);
                                     $labelClass = ($isComplete || $isAutoLunas) ? 'label-success' : 'label-danger';
                                     if ($isComplete || $isAutoLunas) {
