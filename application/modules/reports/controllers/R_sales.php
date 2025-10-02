@@ -33,10 +33,10 @@ function __construct() {
 			mc2.name AS customer_name2,
 			mc3.name AS customer_name3,
 			sii.title,
-			SUM(sii.total) AS total,
+			sii.total AS total,
 			si.fid_tax AS tax_name,
-			(SUM(sii.total) * (taxes.value / 100)) AS tax_amount,
-			(SUM(sii.total) * (si.potongan / 100)) AS pph_amount,
+			(sii.total * (taxes.value / 100)) AS tax_amount,
+			(sii.total * (si.potongan / 100)) AS pph_amount,
 			COUNT(DISTINCT CASE WHEN sip.status = 'terbayar' AND sip.deleted = 0 THEN sip.id END) AS termin_1,
 			si.termin AS termin_all,
 			SUM(CASE 
@@ -48,10 +48,10 @@ function __construct() {
 			) 
 			AS total_terbayar,
 			(
-				SUM(sii.total) 
-				+ (SUM(sii.total) * (taxes.value / 100)) 
-				+ (SUM(sii.total) * (si.potongan / 100))
-			) AS total_all		
+				sii.total 
+				+ (sii.total * (taxes.value / 100)) 
+				+ (sii.total * (si.potongan / 100))
+			) AS total_all
 		");
 		$this->db->from("sales_invoices si");
 		$this->db->join("sales_invoices_items sii", "si.id = sii.fid_invoices", "left");
