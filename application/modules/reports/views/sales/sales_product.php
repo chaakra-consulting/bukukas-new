@@ -67,7 +67,7 @@
                                     <?php
                                     
                                     $isComplete = ($row->termin_1 == ($row->termin_all ?? 0));
-                                    $isAutoLunas = ($row->inv_date < '2025-08-01' && ($row->termin_all ?? 0) == 0);
+                                    $isAutoLunas = ($row->inv_date < '2025-09-01' && ($row->termin_all ?? 0) == 0);
                                     $labelClass = ($isComplete || $isAutoLunas) ? 'label-success' : 'label-danger';
                                     if ($isComplete || $isAutoLunas) {
                                         $statusText = 'Lunas';

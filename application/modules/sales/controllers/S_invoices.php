@@ -1155,7 +1155,7 @@ class S_invoices extends MY_Controller {
             $payment_status_class = "label-success";
             $status = "Lunas";
         } else {
-            if ($date < '2025-08-01' && $count_payment_all == 0) {
+            if ($date < '2025-09-01' && $count_payment_all == 0) {
                 $payment_status_class = "label-success";
                 $status = "Lunas";
             } else {
