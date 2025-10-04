@@ -104,7 +104,7 @@ class Customers extends MY_Controller
 
         ));
 
-        $options = in_array($this->input->post('jenis'),['SWASTA']) ? array("bentuk" => $this->input->post('bentuk'),"code_is_null" => true) : array("jenis" => $this->input->post('jenis'),"code_is_null" => true) ;
+        $options = in_array($this->input->post('jenis'),['SWASTA']) ? array("jenis" => $this->input->post('jenis'),"bentuk" => $this->input->post('bentuk'),"code_is_null" => true) : array("jenis" => $this->input->post('jenis'),"code_is_null" => true) ;
         $customers = $this->Master_Customers_model->get_details($options)->result();
         $jenisCode = get_code_jenis_customers($this->input->post('jenis'),$this->input->post('bentuk'));
 
@@ -149,7 +149,7 @@ class Customers extends MY_Controller
         $customer = $this->Master_Customers_model->get_details(array("id" => $customers_id))->row();
 
         if(!$customer->code){
-            $options = in_array($this->input->post('jenis'),['SWASTA']) ? array("bentuk" => $this->input->post('bentuk'),"code_is_null" => true) : array("jenis" => $this->input->post('jenis'),"code_is_null" => true) ;
+            $options = in_array($this->input->post('jenis'),['SWASTA']) ? array("jenis" => $this->input->post('jenis'),"bentuk" => $this->input->post('bentuk'),"code_is_null" => false) : array("jenis" => $this->input->post('jenis'),"code_is_null" => false) ;
             //$options = array("jenis" => $this->input->post('jenis'),"code_is_null" => true) ;
             $customers = $this->Master_Customers_model->get_details($options)->result();
             $jenisCode = get_code_jenis_customers($this->input->post('jenis'),$this->input->post('bentuk'));
