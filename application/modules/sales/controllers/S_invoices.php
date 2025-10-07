@@ -1116,7 +1116,7 @@ class S_invoices extends MY_Controller {
             $data->invoice_code,
             $data->payment_date,
             $data->count,
-            $data->bukti ? "<a href='" . base_url('assets/images/verifikasi/' . $data->bukti) . "' target='_blank' style='text-decoration: underline;'>Lihat File</a>" : "-",
+            $data->bukti ? "<a href='" . base_url('assets/images/verifikasi/' . rawurlencode($data->bukti)) . "' target='_blank' style='text-decoration: underline;'>Lihat File</a>" : "-",
             $this->_get_payments_status_label($data),
             to_currency($data->total),
         );
