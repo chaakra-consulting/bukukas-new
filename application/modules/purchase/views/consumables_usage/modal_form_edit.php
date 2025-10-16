@@ -51,6 +51,12 @@
             ?>
             <span style="font-weight: bold;">Pcs</span>
         </div>
+        <div class="col-md-9 col-md-offset-3" style="margin-top: 5px;">
+            <small id="remaining-stock" style="color: #777;"></small>
+        </div>
+        <div class="col-md-9 col-md-offset-3" style="margin-top: 3px;">
+            <small id="stock-warning" style="color: red; display: none;">Jumlah melebihi stok tersedia!</small>
+        </div>
     </div>
     <div class="form-group">
         <label for="purpose" class=" col-md-3">Tujuan</label>
@@ -82,46 +88,91 @@
 
         $("#consumable-form .select2").select2();
         setDatePicker("#usage_date");
-
-        const consumableSelect = $("#consumable_id");
+        const quantityInput = $("#quantity");
         const satuanLabel = $("#satuan-label");
+        const remainingStock = $("#remaining-stock");
+        const stockWarning = $("#stock-warning");
+        const consumableSelect = $("#consumable_id");
+        const submitBtn = $("#submit-button"); // pastikan id tombol submit adalah ini
+        let currentStock = 0;
 
-        function loadSatuan(consumableId) {
+        // Ambil value consumable dan quantity lama dari PHP
+        const defaultConsumableId = "<?php echo isset($model_info->consumable_id) ? $model_info->consumable_id : ''; ?>";
+        const oldQuantity = parseFloat("<?php echo isset($model_info->quantity) ? $model_info->quantity : 0; ?>");
+
+        // Fungsi ambil stok dari server
+        function loadStock(consumableId, addOldQuantity = 0) {
             if (!consumableId) {
                 satuanLabel.text("");
+                remainingStock.text("");
+                quantityInput.val("");
+                quantityInput.removeAttr("max");
+                stockWarning.hide();
+                currentStock = 0;
                 return;
             }
 
             $.ajax({
-                url: "<?php echo get_uri('purchase/p_invoices/get_info_consumables/') ?>" + consumableId,
+                url: "<?php echo get_uri('purchase/p_invoices/get_info_consumable_stock/'); ?>" + consumableId,
                 type: "GET",
                 dataType: "json",
                 beforeSend: function () {
-                    satuanLabel.text("Loading...");
+                    remainingStock.text("Memuat stok...");
+                    stockWarning.hide();
                 },
                 success: function (response) {
-                    if (response.success && response.cust && response.cust.satuan) {
-                        satuanLabel.text(response.cust.satuan);
+                    if (response.success && response.consumable.remaining_stock !== undefined) {
+                        // Tambahkan stok lama dari data edit
+                        currentStock = parseFloat(response.consumable.remaining_stock) + addOldQuantity;
+
+                        remainingStock.html("Sisa stok: <strong>" + currentStock + "</strong>");
+                        quantityInput.attr("max", currentStock);
+
+                        if (currentStock === 0) {
+                            stockWarning.text("Stok kosong — Hubungi Admin!").show();
+                            quantityInput.prop("disabled", true);
+                            submitBtn.prop("disabled", true);
+                        } else {
+                            stockWarning.hide();
+                            quantityInput.prop("disabled", false);
+                            submitBtn.prop("disabled", false);
+                        }
                     } else {
-                        satuanLabel.text("-");
+                        currentStock = 0;
+                        remainingStock.text("Sisa stok: -");
+                        stockWarning.text("Tidak dapat memuat stok!").show();
+                        quantityInput.prop("disabled", true);
+                        submitBtn.prop("disabled", true);
                     }
                 },
                 error: function () {
-                    satuanLabel.text("Error");
+                    remainingStock.text("Gagal memuat stok");
+                    currentStock = 0;
+                    quantityInput.removeAttr("max");
                 }
             });
         }
 
-        // Trigger AJAX saat dropdown berubah
-        consumableSelect.on("change", function () {
-            loadSatuan($(this).val());
+        // Saat dropdown berubah
+        consumableSelect.on("change", function (e, fromInit = false) {
+            const consumableId = $(this).val();
+            loadStock(consumableId, fromInit ? oldQuantity : 0);
         });
 
-        // Jalankan sekali saat halaman pertama kali load, kalau sudah ada value
-        const initialConsumableId = consumableSelect.val();
-        if (initialConsumableId) {
-            loadSatuan(initialConsumableId);
+        // Saat load pertama kali
+        if (defaultConsumableId) {
+            consumableSelect.val(defaultConsumableId).trigger("change", [true]);
         }
+
+        // Validasi input quantity
+        quantityInput.on("input", function () {
+            const value = parseFloat($(this).val());
+            if (currentStock > 0 && value > currentStock) {
+                stockWarning.text("Jumlah melebihi stok tersedia!").show();
+            } else {
+                stockWarning.hide();
+            }
+        });
 
         $("#consumable-form").appForm({
             onSuccess: function (result) {
