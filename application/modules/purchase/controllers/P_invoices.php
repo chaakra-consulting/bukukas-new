@@ -9,6 +9,10 @@ class P_invoices extends MY_Controller {
         parent::__construct();
         $this->load->model('purchase/Purchase_Invoices_model');
         $this->load->model('purchase/Purchase_InvoicesItems_model');
+        $this->load->model('purchase/Purchase_Consumables_model');
+        $this->load->model('purchase/Purchase_ConsumablesUsage_model');
+        $this->load->model('master/Master_Consumables_model');
+        $this->load->model('Users_model');
     }
 
     function index() {
@@ -43,6 +47,8 @@ class P_invoices extends MY_Controller {
 
         $view_data['model_info'] = $this->Purchase_Invoices_model->get_one($this->input->post('id'));
         $view_data['clients_dropdown'] = array("" => "-") + $this->Master_Vendors_model->get_dropdown_list(array("name"));
+        $view_data['consumables_dropdown'] = array("" => "-") + $this->Master_Consumables_model->get_dropdown_list(array("name"));
+
         $this->load->view('invoice/modal_form',$view_data);
     }
 
@@ -98,20 +104,20 @@ class P_invoices extends MY_Controller {
             //"fid_vendor" => "required"
         ));
         $foto = $_FILES['foto'];
-    if (!empty($foto['name'])) { // Periksa apakah ada file yang diunggah
-        $config['upload_path'] = './assets/images/bukti';
-        $config['allowed_types'] = 'jpg|jpeg|png|gif|pdf';
+        if (!empty($foto['name'])) { // Periksa apakah ada file yang diunggah
+            $config['upload_path'] = './assets/images/bukti';
+            $config['allowed_types'] = 'jpg|jpeg|png|gif|pdf';
 
-        $this->load->library('upload', $config);
-        if (!$this->upload->do_upload('foto')) {
-            echo json_encode(array("success" => false, 'message' => $this->upload->display_errors()));
-            die();
+            $this->load->library('upload', $config);
+            if (!$this->upload->do_upload('foto')) {
+                echo json_encode(array("success" => false, 'message' => $this->upload->display_errors()));
+                die();
+            } else {
+                $foto = $this->upload->data('file_name');
+            }
         } else {
-            $foto = $this->upload->data('file_name');
+            $foto = ''; // Atur foto menjadi string kosong jika tidak ada file yang diunggah
         }
-    } else {
-        $foto = ''; // Atur foto menjadi string kosong jika tidak ada file yang diunggah
-    }
 
         $data = array(
             "code" => $this->input->post('code'),
@@ -132,17 +138,17 @@ class P_invoices extends MY_Controller {
             "created_at" => date("Y-m-d H:i:s")
         );
 
-       
-           $save_id = $this->Purchase_Invoices_model->save($data);
+    
+        $save_id = $this->Purchase_Invoices_model->save($data);
+        
+        if($save_id){
             
-            if($save_id){
-                
-                    echo json_encode(array("success" => true, "data" => $this->_row_data($save_id), 'id' => $save_id,'message' => lang('record_saved')));
-                
-            }else{
-                 echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
-            }
+                echo json_encode(array("success" => true, "data" => $this->_row_data($save_id), 'id' => $save_id,'message' => lang('record_saved')));
+            
+        }else{
+                echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
         }
+    }
     
 
     function save() {
@@ -503,7 +509,10 @@ class P_invoices extends MY_Controller {
         if (!$invoice_id) {
             $invoice_id = $view_data['model_info']->fid_invoices;
         }
+        $view_data['head_info'] = $this->Purchase_Invoices_model->get_details(array("id"=>$invoice_id))->row();
         $view_data['invoice_id'] = $invoice_id;
+        $view_data['consumables_dropdown'] = array("" => "-") + $this->Master_Consumables_model->get_dropdown_list(array("name"));
+
         $this->load->view('invoice/item_modal_form', $view_data);
     }
     function item_modal_form_edit() {
@@ -519,6 +528,9 @@ class P_invoices extends MY_Controller {
             $invoice_id = $view_data['model_info']->fid_invoices;
         }
         $view_data['invoice_id'] = $invoice_id;
+        $view_data['head_info'] = $this->Purchase_Invoices_model->get_details(array("id"=>$invoice_id))->row();
+        $view_data['consumables_dropdown'] = array("" => "-") + $this->Master_Consumables_model->get_dropdown_list(array("name"));
+
         $this->load->view('invoice/item_modal_form_edit', $view_data);
     }
     function item_modal_form_view() {
@@ -549,6 +561,11 @@ class P_invoices extends MY_Controller {
         $basic_price = unformat_currency($this->input->post('invoice_item_basic'));
         $quantity = unformat_currency($this->input->post('invoice_item_quantity'));
         $id = $this->input->post('id');
+        $consumable_id = $this->input->post('consumable_id');
+        $quantity_consumables = $this->input->post('quantity_consumables');
+
+        $quantity_consumables = get_quantity_by_satuan_consumables($consumable_id,$quantity,$quantity_consumables);
+
         $invoice_item_data = array(
             "fid_invoices" => $invoice_id,
             "title" => $this->input->post('title'),
@@ -556,6 +573,8 @@ class P_invoices extends MY_Controller {
             "quantity" => $quantity,
             "basic_price" => $basic_price,
             "total" => $basic_price * $quantity,
+            "consumable_id" => $consumable_id,
+            "quantity_consumables" => $quantity_consumables,
         );
 
         $invoice_item_id = $this->Purchase_InvoicesItems_model->save($invoice_item_data, $id);
@@ -576,18 +595,24 @@ class P_invoices extends MY_Controller {
             "id" => "numeric",
             
         ));
-
         
         $basic_price = unformat_currency($this->input->post('invoice_item_basic'));
         $quantity = unformat_currency($this->input->post('invoice_item_quantity'));
         $id = $this->input->post('id');
+
+        $consumable_id = $this->input->post('consumable_id');
+        $quantity_consumables = $this->input->post('quantity_consumables');
+
+        $quantity_consumables = get_quantity_by_satuan_consumables($consumable_id,$quantity,$quantity_consumables);
+
         $invoice_item_data = array(
-           
             "title" => $this->input->post('title'),
             "description" => $this->input->post('description'),
             "quantity" => $quantity,
             "basic_price" => $basic_price,
             "total" => $basic_price * $quantity,
+            "consumable_id" => $consumable_id,
+            "quantity_consumables" => $quantity_consumables,
         );
 
         $invoice_item_id = $this->Purchase_InvoicesItems_model->save($invoice_item_data, $id);
@@ -641,6 +666,7 @@ class P_invoices extends MY_Controller {
         foreach ($list_data as $data) {
             $result[] = $this->_make_item_row($data);
         }
+
         echo json_encode(array("data" => $result));
         // $this->output->enable_profiler(TRUE);
         // print_r($list_data);
@@ -656,28 +682,305 @@ class P_invoices extends MY_Controller {
         }
 
         $val = $this->Purchase_Invoices_model->get_details(array("id" => $data->fid_invoices))->row();
-
+        $consumable = $this->Master_Consumables_model->get_details(array("id" => $data->consumable_id))->row();
         if($val->status != "paid" AND $val->is_verified == "0"){
-            return array(
-                modal_anchor(get_uri("purchase/p_invoices/item_modal_form_edit"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit'), "data-post-id" => $data->id))
-                . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("purchase/p_invoices/delete_item"), "data-action" => "delete")),
-                $item,
-                to_decimal_format($data->quantity),
-                to_currency($data->basic_price),
-                to_currency($data->total)
-                
-            );
-
+            if(strpos($val->code, "503") !== false){
+                // print_r((strpos($val->code, "503") !== false));exit;
+                return array(
+                    modal_anchor(get_uri("purchase/p_invoices/item_modal_form_edit"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit'), "data-post-id" => $data->id))
+                    . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("purchase/p_invoices/delete_item"), "data-action" => "delete")),
+                    $item,
+                    $data->quantity ? to_decimal_format($data->quantity)." ".$consumable->satuan : '-',
+                    $consumable->name,
+                    to_decimal_format($data->quantity_consumables),
+                    to_currency($data->basic_price),
+                    to_currency($data->total)
+                );
+            }else{
+                return array(
+                    modal_anchor(get_uri("purchase/p_invoices/item_modal_form_edit"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit'), "data-post-id" => $data->id))
+                    . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("purchase/p_invoices/delete_item"), "data-action" => "delete")),
+                    $item,
+                    to_decimal_format($data->quantity),
+                    to_currency($data->basic_price),
+                    to_currency($data->total)
+                    
+                );
+            }
         }else{
-            return array(
-                modal_anchor(get_uri("purchase/p_invoices/item_modal_form_view"), "<i class='fa fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id)),
-                $item,
-                to_decimal_format($data->quantity),
-                to_currency($data->basic_price),
-                to_currency($data->total)
+            if(strpos($val->code, "503") !== false){
+                return array(
+                    modal_anchor(get_uri("purchase/p_invoices/item_modal_form_view"), "<i class='fa fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id)),
+                    $item,
+                    $data->quantity ? to_decimal_format($data->quantity)." ".$consumable->satuan : '-',
+                    $consumable->name,
+                    to_decimal_format($data->quantity_consumables),
+                    to_currency($data->basic_price),
+                    to_currency($data->total)
+                );
+            }else{
+                return array(
+                    modal_anchor(get_uri("purchase/p_invoices/item_modal_form_view"), "<i class='fa fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id)),
+                    $item,
+                    to_decimal_format($data->quantity),
+                    to_currency($data->basic_price),
+                    to_currency($data->total)
+                );
+            }
+        }
+    }
 
+    function index_consumables_usage() {
+        $start_date = date("Y-m").'-01';
+            $end_date = date("Y-m-d");
+        if(!empty($_GET['start']) && !empty($_GET['end'])){
+            $start_date = $_GET['start'];
+            $end_date = $_GET['end'];
+
+        }
+            $view_data['start_date']=$start_date;
+            $view_data['end_date']=$end_date; 
+        $this->template->rander("consumables_usage/index",$view_data);
+    }  
+
+    function list_data_consumable_stock() {
+        $list_data = $this->Purchase_ConsumablesUsage_model->get_details_by_consumable()->result();
+        // print_r($list_data);exit;
+        $result = array();
+        foreach ($list_data as $data) {
+            $result[] = $this->_make_row_consumable_stock($data);
+        }
+    
+        echo json_encode(array("data" => $result));
+    }
+
+    private function _make_row_consumable_stock($data) {
+        $row_data = array(
+            $data->consumable_name,
+            $data->remaining_stock." ".$data->satuan,
+        );
+        return $row_data;
+    }
+
+    function modal_data_usage() {
+        $view_data['consumables_dropdown'] = array("" => "-") + $this->Master_Consumables_model->get_dropdown_list(array("name"));
+        
+        $users = $this->Users_model->get_all_where(array("deleted" => 0))->result();
+        $users_dropdown = array("" => "-");
+        foreach ($users as $user) {
+            $full_name = trim($user->first_name . " " . $user->last_name);
+            $users_dropdown[$user->id] = $full_name;
+        }
+        $view_data['users_dropdown'] = $users_dropdown;
+
+        $this->load->view('consumables_usage/modal_data_usage',$view_data);
+    }
+
+    function modal_form_consumables_usage() {
+                    
+        $view_data['model_info'] = $this->Purchase_ConsumablesUsage_model->get_details()->result();
+        $view_data['consumables_dropdown'] = array("" => "-") + $this->Master_Consumables_model->get_dropdown_list(array("name"));
+
+        $this->load->view('consumables_usage/modal_form',$view_data);
+    }
+
+    function modal_form_edit_consumable_usage() {
+        validate_submitted_data(array(
+            "id" => "numeric"
+        ));
+    
+        $id = $this->input->post('id');
+        $options = array("id" => $id);
+            
+        $model_info = $this->Purchase_ConsumablesUsage_model->get_details($options)->row();
+        // print_r($model_info);exit;
+        $view_data['model_info'] = $model_info;
+        // $view_data['auth_user_id'] = $model_info->used_by;
+        $view_data['consumables_dropdown'] = array("" => "-") + $this->Master_Consumables_model->get_dropdown_list(array("name"));
+                
+        $users = $this->Users_model->get_all_where(array("deleted" => 0))->result();
+        $users_dropdown = array("" => "-");
+        foreach ($users as $user) {
+            $full_name = trim($user->first_name . " " . $user->last_name);
+            $users_dropdown[$user->id] = $full_name;
+        }
+        $view_data['users_dropdown'] = $users_dropdown;
+     
+        $this->load->view('consumables_usage/modal_form_edit', $view_data);
+    }
+
+    function add_consumables_usage() {
+        validate_submitted_data(array(
+            "consumable_id" => "required",
+            "quantity" => "required",
+        ));
+        $auth_user_id = $this->session->userdata("user_id");
+        $data = array(
+            "consumable_id" => $this->input->post('consumable_id'),
+            "usage_date" => $this->input->post('usage_date'),
+            "quantity" => $this->input->post('quantity'),
+            // "used_by" => $this->input->post('used_by'),
+            "used_by" => $auth_user_id,
+            "purpose" => $this->input->post('purpose'),
+            "deleted" => 0,
+            "created_at" => date("Y-m-d H:i:s"),
+            "updated_at" => date("Y-m-d H:i:s"),
+        );
+
+        $save_id = $this->Purchase_ConsumablesUsage_model->save($data);
+            
+        if($save_id){
+            echo json_encode(array("success" => true, "data" => $this->_row_data_consumable_usage($save_id), 'id' => $save_id,'message' => lang('record_saved')));
+        }else{
+            echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
+        }
+    }
+
+    function save_edit_consumables_usage() {
+        $id = $this->input->post('id');
+        
+        //$auth_user_id = $this->session->userdata("user_id");
+        $data = array(
+            "consumable_id" => $this->input->post('consumable_id'),
+            "usage_date" => $this->input->post('usage_date'),
+            "quantity" => $this->input->post('quantity'),
+            //"used_by" => $this->input->post('used_by'),
+            //"used_by" => $auth_user_id,
+            "purpose" => $this->input->post('purpose'),
+            "updated_at" => date("Y-m-d H:i:s"),
+        );
+        $save_id = $this->Purchase_ConsumablesUsage_model->save($data, $id);
+        if ($save_id) {
+            echo json_encode(array("success" => true, "data" => $this->_row_data_consumable_usage($save_id), 'id' => $save_id, 'message' => lang('record_saved')));
+        } else {
+            echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
+        }
+    }
+ 
+    function delete_consumables_usage() {
+
+        validate_submitted_data(array(
+            "id" => "required|numeric"
+        ));
+
+        $id = $this->input->post('id');
+        if ($this->input->post('undo')) {
+            if ($this->Purchase_ConsumablesUsage_model->delete($id, true)) {
+                echo json_encode(array("success" => true, "data" => $this->_row_data_consumable_usage($id), "message" => lang('record_undone')));
+            } else {
+                echo json_encode(array("success" => false, lang('error_occurred')));
+            }
+        } else {
+            if ($this->Purchase_ConsumablesUsage_model->delete($id)) {
+                echo json_encode(array("success" => true, 'message' => lang('record_deleted')));
+            } else {
+                echo json_encode(array("success" => false, 'message' => lang('record_cannot_be_deleted')));
+            }
+        }
+    }
+  
+    function list_data_consumable_usage($start_date = false, $end_date = false) {
+        if (!$start_date) {
+            $start_date = date("Y-m");
+        }
+    
+        if (!$end_date) {
+            $end_date = date("Y-m-d");
+        }
+
+        $auth_user = $this->session->userdata();
+        $user = $this->Users_model->get_details(array("id" => $auth_user['user_id']))->row();
+
+        if($user->is_admin == '1'){
+            $options = array(
+                // "id" => $id,
+                'start_date' => $start_date,
+                'end_date' => $end_date,
             );
+        }else{
+            $options = array(
+                // "id" => $id,
+                "used_by" => $user->id,
+                'start_date' => $start_date,
+                'end_date' => $end_date,
+            );
+        }
 
+        $list_data = $this->Purchase_ConsumablesUsage_model->get_details($options)->result();
+        // $list_data = $this->Purchase_ConsumablesUsage_model->get_details(array(
+        //     'start_date' => $start_date,
+        //     'end_date' => $end_date,
+        // ))->result();
+    
+        $result = array();
+        foreach ($list_data as $data) {
+            $result[] = $this->_make_row_consumable_usage($data);
+        }
+    
+        echo json_encode(array("data" => $result));
+    }
+
+    private function _row_data_consumable_usage($id) {
+        $options = array(
+            "id" => $id
+        );
+        $data = $this->Purchase_Consumables_model->get_details($options)->row();
+        return $this->_make_row_consumable_usage($data);
+    }
+
+    /* prepare a row of client list table */
+
+    private function _make_row_consumable_usage($data) {
+        $options_consumable = array("id" => $data->consumable_id);
+        $options_user = array("id" => $data->used_by);        
+
+        $consumable = $this->Master_Consumables_model->get_details($options_consumable)->row();
+        $user = $this->Users_model->get_details($options_user)->row();
+
+        $row_data = array(
+            format_to_date_ina($data->usage_date),
+            $user->first_name." ".$user->last_name,
+            $consumable->name,
+            $data->quantity." Pcs",
+            $data->purpose,
+        );
+
+        // $auth_user = $this->session->userdata();
+        // $user = $this->Users_model->get_details(array("id" => $auth_user['user_id']))->row();
+
+        // if($data->used_by == $auth_user["user_id"] || $user->is_admin == '1'){
+            $row_data[] = modal_anchor(get_uri("purchase/p_invoices/modal_form_edit_consumable_usage"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => 'Edit Pengeluaran', "data-post-id" => $data->id))
+            . js_anchor("<i class='fa fa-times fa-fw'></i>", array(
+                'title' => lang('delete_client'),
+                "class" => "delete",
+                "data-id" => $data->id,
+                "data-action-url" => get_uri("purchase/p_invoices/delete_consumables_usage"),
+                "data-action" => "delete"
+            ));
+        // }else{
+        //     $row_data[] = null;
+        // }
+        return $row_data;
+    }
+
+    function get_info_consumable_stock($consumable_id) {
+        $consumable = $this->Purchase_ConsumablesUsage_model->get_details_by_consumable(array("consumable_id"=>$consumable_id))->row();
+
+        if ($consumable) {
+            echo json_encode(array("success" => true, "consumable" => $consumable));
+        } else {
+            echo json_encode(array("success" => false));
+        }
+    }
+
+    function get_info_consumables($id)
+    {
+        $item = $this->Master_Consumables_model->get_info_by_id($id);
+        // print_r($item->name);exit;
+        if ($item) {
+            echo json_encode(array("success" => true, "cust" => $item));
+        } else {
+            echo json_encode(array("success" => false));
         }
     }
 
@@ -837,6 +1140,162 @@ class P_invoices extends MY_Controller {
         }
     }
 
+    // function index_consumables() {
+    //     $start_date = date("Y-m").'-01';
+    //         $end_date = date("Y-m-d");
+    //     if(!empty($_GET['start']) && !empty($_GET['end'])){
+    //         $start_date = $_GET['start'];
+    //         $end_date = $_GET['end'];
+
+    //     }
+    //         $view_data['start_date']=$start_date;
+    //         $view_data['end_date']=$end_date; 
+    //     $this->template->rander("consumables/index",$view_data);
+    // }  
+
+    // function modal_form_consumables() {
+    //     //get custom fields
+    //     // $view_data['model_info'] = $this->Purchase_Consumables_model->get_one($this->input->post('id'));
+    //     $view_data['consumables_dropdown'] = array("" => "-") + $this->Master_Consumables_model->get_dropdown_list(array("name"));
+    //     // print_r($view_data);exit;
+    //     $this->load->view('consumables/modal_form',$view_data);
+    // }
+
+    // function modal_form_edit_consumable() {
+    //     validate_submitted_data(array(
+    //         "id" => "numeric"
+    //     ));
+    
+    //     $id = $this->input->post('id');
+    //     $options = array("id" => $id);
+            
+    //     $model_info = $this->Purchase_Consumables_model->get_details($options)->row();
+    //     // print_r($model_info);exit;
+    //     $view_data['model_info'] = $model_info;
+    //     $view_data['consumables_dropdown'] = array("" => "-") + $this->Master_Consumables_model->get_dropdown_list(array("name"));
+     
+    //     $this->load->view('consumables/modal_form_edit', $view_data);
+    // }
+
+    // function add_consumables() {
+    //     validate_submitted_data(array(
+    //         "consumable_id" => "required",
+    //     ));
+
+    //     $price = unformat_currency($this->input->post('unit_price'));
+    //     $data = array(
+    //         "consumable_id" => $this->input->post('consumable_id'),
+    //         "purchase_date" => $this->input->post('purchase_date'),
+    //         "quantity" => $this->input->post('quantity'),
+    //         "unit_price" => $price,
+    //         "deleted" => 0,
+    //         "created_at" => date("Y-m-d H:i:s"),
+    //         "updated_at" => date("Y-m-d H:i:s"),
+    //     );
+
+    //     $save_id = $this->Purchase_Consumables_model->save($data);
+            
+    //     if($save_id){
+    //         echo json_encode(array("success" => true, "data" => $this->_row_data_consumable($save_id), 'id' => $save_id,'message' => lang('record_saved')));
+    //     }else{
+    //         echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
+    //     }
+    // }
+
+    // function save_edit_consumables() {
+    //     $id = $this->input->post('id');
+        
+    //     $price = unformat_currency($this->input->post('unit_price'));
+    //     $data = array(
+    //         "consumable_id" => $this->input->post('consumable_id'),
+    //         "purchase_date" => $this->input->post('purchase_date'),
+    //         "quantity" => $this->input->post('quantity'),
+    //         "unit_price" => $price,
+    //         "updated_at" => date("Y-m-d H:i:s"),
+    //     );
+    //     // print_r($data);exit;
+    //     $save_id = $this->Purchase_Consumables_model->save($data, $id);
+    //     if ($save_id) {
+    //         echo json_encode(array("success" => true, "data" => $this->_row_data_consumable($save_id), 'id' => $save_id, 'message' => lang('record_saved')));
+    //     } else {
+    //         echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
+    //     }
+    // }
+
+    // function delete_consumables() {
+
+    //     validate_submitted_data(array(
+    //         "id" => "required|numeric"
+    //     ));
+
+    //     $id = $this->input->post('id');
+    //     if ($this->input->post('undo')) {
+    //         if ($this->Purchase_Consumables_model->delete($id, true)) {
+    //             echo json_encode(array("success" => true, "data" => $this->_row_data_consumable($id), "message" => lang('record_undone')));
+    //         } else {
+    //             echo json_encode(array("success" => false, lang('error_occurred')));
+    //         }
+    //     } else {
+    //         if ($this->Purchase_Consumables_model->delete($id)) {
+    //             echo json_encode(array("success" => true, 'message' => lang('record_deleted')));
+    //         } else {
+    //             echo json_encode(array("success" => false, 'message' => lang('record_cannot_be_deleted')));
+    //         }
+    //     }
+    // }
+
+    // function list_data_consumable($start_date = false, $end_date = false) {
+    //     if (!$start_date) {
+    //         $start_date = date("Y-m");
+    //     }
+    
+    //     if (!$end_date) {
+    //         $end_date = date("Y-m-d");
+    //     }
+
+    
+    //     $list_data = $this->Purchase_Consumables_model->get_details(array(
+    //         'start_date' => $start_date,
+    //         'end_date' => $end_date,
+    //     ))->result();
+    
+    //     $result = array();
+    //     foreach ($list_data as $data) {
+    //         $result[] = $this->_make_row_consumable($data);
+    //     }
+    
+    //     echo json_encode(array("data" => $result));
+    // }
+    
+    // private function _row_data_consumable($id) {
+    //     $options = array(
+    //         "id" => $id
+    //     );
+    //     $data = $this->Purchase_Consumables_model->get_details($options)->row();
+    //     return $this->_make_row_consumable($data);
+    // }
+
+    // /* prepare a row of client list table */
+
+    // private function _make_row_consumable($data) {
+    //     $options = array(
+    //         "id" => $data->consumable_id
+    //     );        
+
+    //     $consumable = $this->Master_Consumables_model->get_details($options)->row();
+
+    //     $row_data = array(
+    //         format_to_date_ina($data->purchase_date),
+    //         $consumable->name,
+    //         $data->quantity." ".$consumable->satuan,
+    //         to_currency($data->unit_price),
+    //     );
+
+    //     $row_data[] = modal_anchor(get_uri("purchase/p_invoices/modal_form_edit_consumable"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => 'Edit Pengeluaran', "data-post-id" => $data->id))
+    //         . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_client'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("purchase/p_invoices/delete_consumables"), "data-action" => "delete"));
+
+    //     return $row_data;
+    // }
 
     
 
