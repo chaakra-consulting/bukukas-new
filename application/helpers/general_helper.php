@@ -2102,6 +2102,32 @@ if(!function_exists("get_code_jenis_customers")){
     }
 }
 
+
+if(!function_exists("get_quantity_by_satuan_consumables")){
+    function get_quantity_by_satuan_consumables($consumable_id = null, $quantity = 0, $quantity_consumables  = 0) {
+        $ci = get_instance();
+        $master_consumable = $ci->Master_Consumables_model->get_details(array("id" => $consumable_id))->row();
+        $satuan = strtolower($master_consumable->satuan);
+        if(in_array($satuan,["pcs", "rim", "lusin"])){
+            switch($satuan){
+                case'lusin':
+                    $q = $quantity * 12;
+                    break;
+                case'rim':
+                    $q = $quantity * 500;
+                    break;
+                default:
+                    $q = $quantity;
+                    break;
+            }
+        }else{
+            $q = $quantity_consumables;
+        }
+
+        return $q;
+    }
+}
+
 if(!function_exists("generate_code_invoice_payment")){
     function generate_code_invoice_payment($project_info = null, $post_data = null) {
         $ci = get_instance();
