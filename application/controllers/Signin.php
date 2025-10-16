@@ -23,6 +23,8 @@ class Signin extends CI_Controller {
 
             if ($user->user_type == 'marketing') {
                 redirect('master/customers');
+            } elseif ($user->user_type == 'staff' && $user->is_admin == 0) {
+                redirect('purchase/p_invoices/index_consumables_usage');
             } else {
                 redirect('dashboard');
             }
@@ -43,7 +45,9 @@ class Signin extends CI_Controller {
                 $user = $this->Users_model->get_logged_in_user();
                 if ($user->user_type == 'marketing') {
                     redirect('master/customers');
-                } else {
+                } elseif ($user->user_type == 'staff' && $user->is_admin == 0) {
+                    redirect('purchase/p_invoices/index_consumables_usage');
+                }else {
                     if ($redirect) {
                         redirect($redirect);
                     } else {
