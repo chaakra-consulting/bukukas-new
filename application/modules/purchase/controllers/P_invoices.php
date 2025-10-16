@@ -924,7 +924,7 @@ class P_invoices extends MY_Controller {
         $options = array(
             "id" => $id
         );
-        $data = $this->Purchase_Consumables_model->get_details($options)->row();
+        $data = $this->Purchase_ConsumablesUsage_model->get_details($options)->row();
         return $this->_make_row_consumable_usage($data);
     }
 
