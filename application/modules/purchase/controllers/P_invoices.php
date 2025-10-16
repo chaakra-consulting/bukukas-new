@@ -757,7 +757,7 @@ class P_invoices extends MY_Controller {
     private function _make_row_consumable_stock($data) {
         $row_data = array(
             $data->consumable_name,
-            $data->remaining_stock." ".$data->satuan,
+            $data->remaining_stock." Pcs",
         );
         return $row_data;
     }
