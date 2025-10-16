@@ -59,6 +59,10 @@
                 //$ap_submenu[] = array("name" => "Pembayaran Pembelian", "slug"=>"p_payments","url" => "purchase/p_payments");
                 //$ap_submenu[] = array("name" => "History Pembelian", "slug"=>"p_history","url" => "purchase/p_history");
                 $ap_submenu[] = array("name" => "Laporan Pembelian", "slug" => "r_purchase", "url" => "reports/r_purchase");
+                // $ap_submenu[] = array("name" => "Pembelian ATK", "slug" => "p_invoices", "url" => "purchase/p_invoices/index_consumables");
+            }
+            if ($is_admin || $user_type == "staff" ||$user_type == "admin_lap" || $user_type == "admin_kan" || $user_type == "verifikasi" || $user_type == "manajer_keu") {
+                $ap_submenu[] = array("name" => "Penggunaan ATK", "slug" => "p_invoices", "url" => "purchase/p_invoices/index_consumables_usage");
 
                 $sidebar_menu[] = array("name" => "Pengeluaran Kantor", "slug" => "#", "url" => "#", "class" => "fa-shopping-cart", "submenu" => $ap_submenu);
             }
@@ -141,6 +145,9 @@
             }
             if ($is_admin || $user_type == "manager" || $user_type == "marketing" || $user_type == "super_admin" || $user_type == "admin_lap" || $user_type == "admin_kan" || $user_type == 'verifikasi') {
                 $master_submenu[] = array("name" => "Customers", "slug" => "customers", "url" => "master/customers");
+            }
+            if ($is_admin || $user_type == "manager" || $user_type == "super_admin" || $user_type == "sdm" || $user_type == 'direktur') {
+                $master_submenu[] = array("name" => "ATK", "slug" => "ATK", "url" => "master/consumables");
             }
             //if($is_admin || $user_type == "manager" || $user_type == "super_admin" || $user_type == "admin_lap" || $user_type == "admin_kan" || $user_type == 'verifikasi'){
             //    $master_submenu[] = array("name" => "Kode Kas", "slug"=>"kode_kas","url" => "master/kode_kas");
