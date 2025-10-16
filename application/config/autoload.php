@@ -361,6 +361,8 @@ $autoload['model'] = array(
 
     'master/Master_Customers_model',
 
+    'master/Master_Consumables_model',
+
     'master/Master_Kode_model',
 
     'master/Master_Vendors_model',
