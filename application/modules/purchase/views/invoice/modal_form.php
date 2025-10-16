@@ -1,38 +1,32 @@
 <?php echo form_open(get_uri("purchase/p_invoices/add"), array("id" => "invoices-form", "class" => "general-form", "role" => "form")); ?>
 <div class="modal-body clearfix">
-    
-<div class="form-group">
-        <label for="code" class=" col-md-3">No Akun</label>
+    <div class="form-group">
+        <label for="code" class="col-md-3">Kode</label>
         <div class="col-md-9">
-        <?php 
-                echo form_dropdown(
-                    "code", array(
-                        "501 - Operasional" => "501 - Operasional",
-                        "502 - Transport" => "502 - Transport",
-                        "503 - Perlengkapan Kantor" => "503 - Perlengkapan Kantor",
-                        "504 - Konsumsi" => "504 - Konsumsi",
-                        "505 - Pos dan Materai" => "505 - Pos dan Materai",
-                        "506 - Gaji" => "506 - Gaji",
-                        "507 - Beban Pajak" => "507 - Beban Pajak",
-                        "508 - Pulsa Handphone" => "508 - Pulsa Handphone",
-                        "509 - Listrik & Air" => "509 - Listrik & Air",
-                        "510 - Internet" => "510 - Internet",
-                        "511 - Maintenance Inventaris" => "511 - Maintenance Inventaris",
-                        "512 - Beban Kirim" => "512 - Beban Kirim",
-                        "513 - Promosi" => "513 - Promosi",
-                        ), "", "class='select2'"
-                    );
-                        ?>
-        </div>
-    </div> 
-    <!--<div class="form-group">
-        <label for="fid_vendor" class="col-md-3">Perusahaan</label>
-        <div class=" col-md-9">
-            <?php
-            echo form_dropdown("fid_vendor", $clients_dropdown, "", "class='select2 validate-hidden' id='fid_vendor' data-rule-required='true', data-msg-required='" . lang('field_required') . "'");
+            <?php 
+            echo form_dropdown(
+                "code",
+                array(
+                    "501 - Operasional" => "501 - Operasional",
+                    "502 - Transport" => "502 - Transport",
+                    "503 - Perlengkapan Kantor" => "503 - Perlengkapan Kantor",
+                    "504 - Konsumsi" => "504 - Konsumsi",
+                    "505 - Pos dan Materai" => "505 - Pos dan Materai",
+                    "506 - Gaji" => "506 - Gaji",
+                    "507 - Beban Pajak" => "507 - Beban Pajak",
+                    "508 - Pulsa Handphone" => "508 - Pulsa Handphone",
+                    "509 - Listrik & Air" => "509 - Listrik & Air",
+                    "510 - Internet" => "510 - Internet",
+                    "511 - Maintenance Inventaris" => "511 - Maintenance Inventaris",
+                    "512 - Beban Kirim" => "512 - Beban Kirim",
+                    "513 - Promosi" => "513 - Promosi",
+                ),
+                "",
+                "class='select2' id='code'"
+            );
             ?>
         </div>
-    </div>-->
+    </div>
     <div class="form-group">
         <label for="inv_date" class="col-md-3">Tanggal</label>
         <div class=" col-md-9">
@@ -89,15 +83,35 @@
 <script type="text/javascript">
     $(document).ready(function () {
 
+            // Inisialisasi Select2
         $("#invoices-form .select2").select2();
+
+        // Awalnya sembunyikan
+        $("#form-consumable, #form-quantity").hide();
+
+        // Gunakan event change (lebih aman di modal AJAX)
+        $("#code").on("change", function () {
+            const selectedText = $(this).find("option:selected").text();
+
+            if (selectedText.startsWith("503")) {
+                $("#form-consumable, #form-quantity").slideDown(200);
+            } else {
+                $("#form-consumable, #form-quantity").slideUp(200);
+                $("#consumable_id").val("").trigger("change");
+                $("#quantity").val("");
+                $("#satuan-label").text("");
+            }
+        });
+
+        // Cek juga jika sudah terisi saat modal dibuka
+        const initialCode = $("#code").find("option:selected").text();
+        if (initialCode.startsWith("503")) {
+            $("#form-consumable, #form-quantity").show();
+        }
         setDatePicker("#inv_date");
         setDatePicker("#end_date");
-        // $("#invoices-form").appForm({
-        //     onSuccess: function (result) {
-        //         $("#invoices-table").appTable({newData: result.data, dataId: result.id});
-        //     }
-        // });
-            RELOAD_VIEW_AFTER_UPDATE = false; //go to invoice page
+
+        RELOAD_VIEW_AFTER_UPDATE = false; //go to invoice page
         
         $("#invoices-form").appForm({
             onSuccess: function (result) {
@@ -187,5 +201,33 @@
                 });
             }
         });
+        $("#consumable_id").on("change", function () {
+            const consumableId = $(this).val();
+            const satuanLabel = $("#satuan-label");
+
+            if (!consumableId) {
+                satuanLabel.text("");
+                return;
+            }
+
+            $.ajax({
+                url: "<?php echo get_uri("purchase/p_invoices/get_info_consumables/") ?>" + consumableId,
+                type: "GET",
+                dataType: "json",
+                beforeSend: function () {
+                    satuanLabel.text("Loading...");
+                },
+                success: function (response) {
+                    if (response.success && response.cust && response.cust.satuan) {
+                        satuanLabel.text(response.cust.satuan);
+                    } else {
+                        satuanLabel.text("-");
+                    }
+                },
+                error: function () {
+                    satuanLabel.text("Error");
+                }
+            });
+        });   
     });
 </script>

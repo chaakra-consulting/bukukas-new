@@ -82,22 +82,38 @@
 </div>
 
 
-
+?
 <script type="text/javascript">
-    // window.onload = updateInvoiceStatusBar();
     RELOAD_VIEW_AFTER_UPDATE = true;
     $(document).ready(function () {
-        $("#invoice-item-table").appTable({
-            source: '<?php echo_uri("purchase/p_invoices/item_list_data/". $invoice_info->id) ?>',
-            order: [[0, "asc"]],
-            hideTools: true,
-            columns: [
+        const has503 = "<?php echo (strpos($invoice_info->code ?? '', '503') !== false) ? 'true' : 'false'; ?>";
+
+        let columns = [
+            {title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"},
+            {title: 'Nama Barang'},              
+            {title: 'Qty.', "class": "text-right w15p"},
+            {title: 'Harga beli', "class": "text-right w15p"},
+            {title: 'Total', "class": "text-right w15p"}
+        ];
+
+        // jika code mengandung "503", tambahkan kolom Jenis ATK dan Jumlah ATK
+        if (has503 === "true") {
+            columns = [
                 {title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"},
                 {title: 'Nama Barang'},              
-                {title: 'Qty.', "class": "text-right w15p"},
+                {title: 'Qty.', "class": "text-right w10p"},
+                {title: 'Jenis ATK', "class": "text-left w15p"},
+                {title: 'Isi', "class": "text-right w10p"},
                 {title: 'Harga beli', "class": "text-right w15p"},
                 {title: 'Total', "class": "text-right w15p"}
-            ],
+            ];
+        }
+
+        $("#invoice-item-table").appTable({
+            source: '<?php echo_uri("purchase/p_invoices/item_list_data/" . $invoice_info->id); ?>',
+            order: [[0, "asc"]],
+            hideTools: true,
+            columns: columns,
             onDeleteSuccess: function (result) {
                 $("#invoice-total-section").html(result.invoice_total_view);
                 if (typeof updateInvoiceStatusBar == 'function') {
@@ -111,13 +127,11 @@
                 }
             }
         });
-
-        
     });
 
     updateInvoiceStatusBar = function (invoiceId) {
         $.ajax({
-            url: "<?php echo get_uri("sales/s_invoices/get_invoice_status_bar"); ?>/" + invoiceId,
+            url: "<?php echo get_uri('sales/s_invoices/get_invoice_status_bar'); ?>/" + invoiceId,
             success: function (result) {
                 if (result) {
                     $("#invoice-status-bar").html(result);
@@ -125,8 +139,6 @@
             }
         });
     };
-
-
 </script>
 
 <?php

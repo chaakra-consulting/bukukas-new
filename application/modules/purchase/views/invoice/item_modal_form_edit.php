@@ -1,49 +1,32 @@
 <?php echo form_open(get_uri("purchase/p_invoices/save_item_edit"), array("id" => "invoice-item-form", "class" => "general-form", "role" => "form")); ?>
 <div class="modal-body clearfix">
     <input type="hidden" name="id" value="<?php echo $model_info->id; ?>" />
-        <div class="form-group">
-        <label for="invoice_item_title" class=" col-md-3"><?php echo lang('item'); ?></label>
+    <div class="form-group">
+        <label for="title" class=" col-md-3">Pengeluaran</label>
         <div class="col-md-9">
             <?php
             echo form_input(array(
-                "id" => "invoice_item_title",
-                "name" => "invoice_item_title",
+                "id" => "title",
+                "name" => "title",
                 "value" => $model_info->title,
                 "class" => "form-control validate-hidden",
-                "placeholder" => lang('select_or_create_new_item'),
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
             ));
             ?>
-            <a id="invoice_item_title_dropdwon_icon" tabindex="-1" href="javascript:void(0);" style="color: #B3B3B3;float: right; padding: 5px 7px; margin-top: -35px; font-size: 18px;"><span>×</span></a>
         </div>
     </div>
+
     <div class="form-group">
-        <label for="description" class=" col-md-3">Deskripsi Item</label>
+        <label for="description" class=" col-md-3">Deskripsi</label>
         <div class="col-md-9">
             <?php
-            echo form_input(array(
+            echo form_textarea(array(
                 "id" => "description",
                 "name" => "description",
                 "value" => $model_info->description,
                 "class" => "form-control",
                 "placeholder" => "Deskripsi",
-            ));
-            ?>
-        </div>
-    </div>
-   
-    <div class="form-group">
-        <label for="category" class=" col-md-3">Kategori</label>
-        <div class="col-md-9">
-            <?php
-            echo form_input(array(
-                "id" => "invoice_item_category",
-                "name" => "category",
-                "value" => $model_info->category,
-                "class" => "form-control",
-                "readonly" => true,
-
             ));
             ?>
         </div>
@@ -65,9 +48,26 @@
             ?>
         </div>
     </div>-->
+
+    <div class="form-group" id="form-consumable" style="display: none;">
+        <label for="consumable_id" class="col-md-3">Pilihan ATK</label>
+        <div class="col-md-8">
+            <?php
+            echo form_dropdown(
+                "consumable_id",
+                $consumables_dropdown,
+                $model_info->consumable_id,
+                "class='select2' id='consumable_id'"
+            );
+            ?>
+        </div>
+    </div>
+
+    <input type="hidden" name="fid_item" id="fid_item" >
+
     <div class="form-group">
-        <label for="invoice_item_quantity" class=" col-md-3"><?php echo lang('quantity'); ?></label>
-        <div class="col-md-9">
+        <label for="invoice_item_quantity" class=" col-md-3">Jumlah Pembelian</label>
+        <div class="col-md-9 d-flex align-items-center">
             <?php
             echo form_input(array(
                 "id" => "invoice_item_quantity",
@@ -77,6 +77,25 @@
                 "placeholder" => lang('quantity'),
                 "data-rule-required" => true,
                 "data-msg-required" => lang("field_required"),
+                "style" => "width: 70%; display: inline-block; margin-right: 10px;"
+            ));
+            ?>
+            <span id="satuan-label" style="font-weight: bold;"></span>
+        </div>
+    </div>
+
+    <div class="form-group" id="form-quantity">
+        <label for="quantity_consumables" class="col-md-3">Jumlah Isi</label>
+        <div class="col-md-9 d-flex align-items-center">
+            <?php 
+            echo form_input(array(
+                "type" => "number",
+                "id" => "quantity_consumables",
+                "name" => "quantity_consumables",
+                "value" => $model_info->quantity_consumables,
+                "class" => "form-control validate-hidden",
+                "placeholder" => "0",
+                "style" => "width: 70%; display: inline-block; margin-right: 10px;"
             ));
             ?>
         </div>
@@ -120,24 +139,84 @@
         $("#invoice-item-form .select2").select2();
         $("#invoice-item-form").appForm({
             onSuccess: function (result) {
-                $("#invoice-item-table").appTable({newData: result.data, dataId: result.id});
+                $("#invoice-item-table").appTable({ newData: result.data, dataId: result.id });
                 $("#invoice-total-section").html(result.invoice_total_view);
-                if (typeof updateInvoiceStatusBar == 'function') {
+                if (typeof updateInvoiceStatusBar == "function") {
                     updateInvoiceStatusBar(result.invoice_id);
                 }
-            }
+            },
         });
 
-        //show item suggestion dropdown when adding new item
-        var isUpdate = "<?php echo $model_info->id; ?>";
-        if (!isUpdate) {
-            applySelect2OnItemTitle();
+        const satuanLabel = $("#satuan-label");
+        const formQuantity = $("#form-quantity");
+        const formConsumable = $("#form-consumable");
+        const consumableInput = $("#consumable_id");
+
+        formQuantity.hide();
+
+        const headCode = "<?php echo isset($head_info->code) ? $head_info->code : ''; ?>";
+
+        if (headCode === "503" || headCode === "503 - Perlengkapan Kantor") {
+
+            formConsumable.show();
+            consumableInput.attr("data-rule-required", "true");
+            consumableInput.attr("data-msg-required", "<?php echo lang('field_required'); ?>");
+            consumableInput.addClass("validate-hidden");
+        } else {
+
+            formConsumable.hide();
+            consumableInput.val("").trigger("change");
+            consumableInput.removeAttr("data-rule-required data-msg-required");
+            consumableInput.removeClass("validate-hidden");
         }
 
-        //re-initialize item suggestion dropdown on request
-        $("#invoice_item_title_dropdwon_icon").click(function () {
-            applySelect2OnItemTitle();
-        })
+        function checkConsumableInfo(consumableId, onLoad = false) {
+            if (!consumableId) {
+                satuanLabel.text("");
+                formQuantity.hide();
+                return;
+            }
+
+            $.ajax({
+                url: "<?php echo get_uri('purchase/p_invoices/get_info_consumables/'); ?>" + consumableId,
+                type: "GET",
+                dataType: "json",
+                beforeSend: function () {
+                    if (!onLoad) satuanLabel.text("Loading...");
+                    formQuantity.hide();
+                },
+                success: function (response) {
+                    if (response.success && response.cust && response.cust.satuan) {
+                        const satuan = response.cust.satuan.toLowerCase();
+                        satuanLabel.text(response.cust.satuan);
+
+                        // tampilkan formQuantity jika satuannya bukan pcs/rim/lusin
+                        if (["pcs", "rim", "lusin"].includes(satuan)) {
+                            formQuantity.hide();
+                            $("#quantity").val("");
+                        } else {
+                            formQuantity.slideDown(200);
+                        }
+                    } else {
+                        satuanLabel.text("-");
+                        formQuantity.hide();
+                    }
+                },
+                error: function () {
+                    satuanLabel.text("Error");
+                    formQuantity.hide();
+                },
+            });
+        }
+
+        consumableInput.on("change", function () {
+            checkConsumableInfo($(this).val());
+        });
+
+        const initialConsumableId = "<?php echo $model_info->consumable_id; ?>";
+        if (initialConsumableId) {
+            checkConsumableInfo(initialConsumableId, true);
+        }
 
     });
 
@@ -192,7 +271,6 @@
 
         });
     }
-
 
 
 
