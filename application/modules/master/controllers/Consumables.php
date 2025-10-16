@@ -9,6 +9,7 @@ class Consumables extends MY_Controller
     function __construct()
     {
         parent::__construct();
+        $this->load->model('Master_Consumables_model');
 
         //check permission to access this module
     }
@@ -90,7 +91,7 @@ class Consumables extends MY_Controller
             "id" => "numeric",
             "name" => "required"
         ));
-        
+
         $data = array(
             "name" => $this->input->post('name'),
             "code" => $this->input->post('code'),
