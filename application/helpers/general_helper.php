@@ -2110,7 +2110,7 @@ if(!function_exists("generate_code_invoice_payment")){
         
         $customer = $ci->Master_Customers_model->get_details(array("id" => $fid_cust))->row();
         
-        $payment_info = $ci->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $project_info->id))->result();
+        $payment_info = $ci->Sales_InvoicesPayments_model->get_details(array("cust_id" => $customer->id))->result();
         // $count_payment = count($payment_info) + 1;
         $count_payment = str_pad(count($payment_info) + 1, 2, '0', STR_PAD_LEFT);
 
