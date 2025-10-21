@@ -37,20 +37,44 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="invoice_item_rate" class=" col-md-3">Harga (Dpp)</label>
-                <div class="col-md-9">
-                    <?php
-                    echo form_input(array(
-                        "id" => "invoice_item_rate",
-                        "name" => "invoice_item_rate",
-                        // "value" => $model_info->rate ? to_decimal_format($model_info->rate) : "",
-                        "class" => "form-control",
-                        "placeholder" => "0",
-                        "data-rule-required" => true,
-                        // "type" => 'number',
-                        "data-msg-required" => lang("field_required"),
-                    ));
-                    ?>
+                <label for="invoice_item_rate" class="col-md-3 control-label">Harga (Dpp)</label>
+
+                <div class="col-md-8">
+                    <div style="display: flex; align-items: center;">
+
+                        <?php
+                        echo form_input(array(
+                            "id" => "invoice_item_rate",
+                            "name" => "invoice_item_rate",
+                            "class" => "form-control",
+                            "placeholder" => "0",
+                            "style" => "flex:1; border-top-right-radius: 0; border-bottom-right-radius: 0;"
+                        ));
+                        ?>
+
+                        <span style="
+                            display: inline-block;
+                            padding: 0 6px;
+                            border: 1px solid transparent;
+                            height: 38px;
+                            line-height: 38px;
+                            background: transparent;
+                            font-weight: bold;
+                            color: #555;
+                        ">.</span>
+
+                        <?php
+                        echo form_input(array(
+                            "id" => "invoice_item_rate_dec",
+                            "name" => "invoice_item_rate_dec",
+                            "class" => "form-control text-center",
+                            "type" => "number",
+                            "value" => "00",
+                            "placeholder" => "00",
+                            "style" => "width: 80px; border-top-left-radius: 0; border-bottom-left-radius: 0;"
+                        ));
+                        ?>
+                    </div>
                 </div>
             </div>
             <div class="form-group">

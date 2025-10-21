@@ -57,6 +57,13 @@ class S_invoices extends MY_Controller {
         $view_data['taxes_dropdown'] = array("" => "-") + $this->Taxes_model->get_dropdown_list(array("value"));
         $view_data['model_info'] = $this->Sales_Invoices_model->get_details($options)->row();
         $view_data['item_info'] = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $id))->row();
+
+        $rate = floatval($view_data['item_info']->total);
+        $formatted = number_format($rate, 2, '.', '');
+        list($int, $dec) =  explode('.', $formatted);
+        $view_data['invoice_item_rate'] = $int;
+        $view_data['invoice_item_rate_dec'] = $dec;
+        
         $view_data['pers_dropdown'] = array("" => "-") + $this->Master_Perusahaan_model->get_dropdown_list(array("name"));
         $view_data['clients_dropdown'] = array("" => "-") + $this->Master_Customers_model->get_dropdown_list(array("name"));
 
@@ -120,11 +127,15 @@ class S_invoices extends MY_Controller {
 
         $item_id = $this->input->post('item_id');
         $rate = unformat_currency($this->input->post('invoice_item_rate'));
+        $dec = unformat_currency($this->input->post('invoice_item_rate_dec'));
+
+        $full_rate = floatval($rate . '.' . str_pad($dec, 2, '0', STR_PAD_RIGHT));
+
         $invoice_item_data = array(
             "fid_invoices" => $save_id,
             "title" => $this->input->post('invoice_item_title'),
-            "rate" => $rate,
-            "total" => $rate,
+            "rate" => $full_rate,
+            "total" => $full_rate,
         );
         $invoice_item_id = $this->Sales_InvoicesItems_model->save($invoice_item_data, $item_id);
         if ($save_id) {
@@ -234,11 +245,14 @@ class S_invoices extends MY_Controller {
 
         $item_id = $this->input->post('item_id');
         $rate = unformat_currency($this->input->post('invoice_item_rate'));
+        $dec = unformat_currency($this->input->post('invoice_item_rate_dec'));
+
+        $full_rate = floatval($rate . '.' . str_pad($dec, 2, '0', STR_PAD_RIGHT));
         $invoice_item_data = array(
             // "fid_invoices" => $invoice_id,
             "title" => $this->input->post('invoice_item_title'),
-            "rate" => $rate,
-            "total" => $rate,
+            "rate" => $full_rate,
+            "total" => $full_rate,
         );
         $invoice_item_id = $this->Sales_InvoicesItems_model->save($invoice_item_data, $item_id);
 
