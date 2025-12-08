@@ -29,7 +29,8 @@ class Purchase_Invoices_model extends Crud_model {
     }
     
     // if ($this->login_user->user_type != "manager") {
-        $where .= " AND code != '506 - Gaji'";
+        // $where .= " AND code != '506 - Gaji'";
+        $where .= " AND memo NOT LIKE '%Gaji Karyawan Bulan%'";
     // }
 
     $data = $this->db->query("SELECT * FROM $this->table 
