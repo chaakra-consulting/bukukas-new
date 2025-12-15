@@ -127,7 +127,26 @@ class S_invoices extends MY_Controller {
             "total" => $rate,
         );
         $invoice_item_id = $this->Sales_InvoicesItems_model->save($invoice_item_data, $item_id);
+
         if ($save_id) {
+            $data_untuk_sdm = array(
+                'bukukas_id'    => $save_id,
+                'perusahaan_id' => $this->input->post('fid_custt'),
+                'nama_project'  => $this->input->post('invoice_item_title'),
+                'waktu_mulai'   => $this->input->post('inv_date'),
+                'waktu_berakhir'=> $this->input->post('inv_contract_date')
+            );
+
+            $url_sdm = "https://dev-sdm.chaakra-consulting.com/api/bukukas-sync/project";
+
+            $ch = curl_init($url_sdm);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data_untuk_sdm));
+
+            $response = curl_exec($ch);
+            curl_close($ch);
+
             echo json_encode(array(
                 "success" => true,
                 "data" => $this->_row_data($save_id),
