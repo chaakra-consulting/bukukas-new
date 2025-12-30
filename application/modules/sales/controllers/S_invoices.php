@@ -131,10 +131,10 @@ class S_invoices extends MY_Controller {
         if ($save_id) {
             $data_untuk_sdm = array(
                 'bukukas_id'    => $save_id,
-                'perusahaan_id' => $this->input->post('fid_custt'),
+                'perusahaan_id' => $this->input->post('fid_cust'),
                 'nama_project'  => $this->input->post('invoice_item_title'),
                 'waktu_mulai'   => $this->input->post('inv_date'),
-                'waktu_berakhir'=> $this->input->post('inv_contract_date')
+                'deadline'      => $this->input->post('inv_contract_date')
             );
 
             $url_sdm = "https://dev-sdm.chaakra-consulting.com/api/bukukas-sync/project";
