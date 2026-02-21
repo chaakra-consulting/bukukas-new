@@ -104,12 +104,12 @@ class Customers extends MY_Controller
 
         ));
 
-        $options = in_array($this->input->post('jenis'),['SWASTA']) ? array("jenis" => $this->input->post('jenis'),"bentuk" => $this->input->post('bentuk'),"code_is_null" => true) : array("jenis" => $this->input->post('jenis'),"code_is_null" => true) ;
+        $options = in_array($this->input->post('jenis'), ['SWASTA']) ? array("jenis" => $this->input->post('jenis'), "bentuk" => $this->input->post('bentuk'), "code_is_null" => true) : array("jenis" => $this->input->post('jenis'), "code_is_null" => true);
         $customers = $this->Master_Customers_model->get_details($options)->result();
-        $jenisCode = get_code_jenis_customers($this->input->post('jenis'),$this->input->post('bentuk'));
+        $jenisCode = get_code_jenis_customers($this->input->post('jenis'), $this->input->post('bentuk'));
 
         $count = str_pad(count($customers) + 1, 2, '0', STR_PAD_LEFT);
-        $code = $jenisCode.'.'.$count;
+        $code = $jenisCode . '.' . $count;
 
         $data = array(
             "name" => $this->input->post('name'),
@@ -148,13 +148,13 @@ class Customers extends MY_Controller
 
         $customer = $this->Master_Customers_model->get_details(array("id" => $customers_id))->row();
 
-        if(!$customer->code){
-            $options = in_array($this->input->post('jenis'),['SWASTA']) ? array("jenis" => $this->input->post('jenis'),"bentuk" => $this->input->post('bentuk'),"code_is_null" => false) : array("jenis" => $this->input->post('jenis'),"code_is_null" => false) ;
+        if (!$customer->code) {
+            $options = in_array($this->input->post('jenis'), ['SWASTA']) ? array("jenis" => $this->input->post('jenis'), "bentuk" => $this->input->post('bentuk'), "code_is_null" => false) : array("jenis" => $this->input->post('jenis'), "code_is_null" => false);
             //$options = array("jenis" => $this->input->post('jenis'),"code_is_null" => true) ;
             $customers = $this->Master_Customers_model->get_details($options)->result();
-            $jenisCode = get_code_jenis_customers($this->input->post('jenis'),$this->input->post('bentuk'));
+            $jenisCode = get_code_jenis_customers($this->input->post('jenis'), $this->input->post('bentuk'));
             $count = str_pad(count($customers) + 1, 2, '0', STR_PAD_LEFT);
-            $code = $jenisCode.'.'.$count;
+            $code = $jenisCode . '.' . $count;
         }
 
 
@@ -235,7 +235,7 @@ class Customers extends MY_Controller
     private function _make_row($data)
     {
         $row_data = array(
-            // $data->npwp,
+            $data->npwp,
             $data->name,
             $data->code ?? '-',
             $data->jenis,
@@ -248,7 +248,6 @@ class Customers extends MY_Controller
 
         $row_data[] = modal_anchor(get_uri("master/customers/view"), "<i class='fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id)) . modal_anchor(get_uri("master/customers/modal_form_edit"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => "Edit Customers", "data-post-id" => $data->id))
             . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => "Delete Customers", "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("master/customers/delete"), "data-action" => "delete"));
-
         return $row_data;
     }
 
@@ -265,8 +264,6 @@ class Customers extends MY_Controller
 
         $this->load->view('customers/view', $view_data);
     }
-
-
 }
 
 /* End of file clients.php */
