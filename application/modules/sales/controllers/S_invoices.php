@@ -3,9 +3,11 @@
 if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
-class S_invoices extends MY_Controller {
+class S_invoices extends MY_Controller
+{
 
-    function __construct() {
+    function __construct()
+    {
         parent::__construct();
 
         $this->load->model('Produksi_model');
@@ -15,25 +17,27 @@ class S_invoices extends MY_Controller {
         $this->load->model('sales/Taxes_model');
         $this->load->model('sales/Sales_InvoicesItems_model');
         $this->load->model('sales/Sales_InvoicesPayments_model');
-  
-           
     }
 
-    function index() {
-        $start_date = date("Y").'-01-01';
-            $end_date = date("Y-m-d");
-        if(!empty($_GET['start']) && !empty($_GET['end'])){
+   
+
+    function index()
+    {
+        $start_date = date("Y") . '-01-01';
+        $end_date = date("Y-m-d");
+        if (!empty($_GET['start']) && !empty($_GET['end'])) {
             $start_date = $_GET['start'];
             $end_date = $_GET['end'];
-
         }
-            $view_data['start_date']=$start_date;
-            $view_data['end_date']=$end_date; 
-        $this->template->rander("invoice/index",$view_data);
+        $view_data['start_date'] = $start_date;
+        $view_data['end_date'] = $end_date;
+        $this->template->rander("invoice/index", $view_data);
     }
 
 
-    function modal_form() {
+
+    function modal_form()
+    {
         //get custom fields
 
         $view_data['model_info'] = $this->Sales_Invoices_model->get_one($this->input->post('id'));
@@ -42,7 +46,7 @@ class S_invoices extends MY_Controller {
         $view_data['clients_dropdown'] = array("" => "-") + $this->Master_Customers_model->get_dropdown_list(array("name"));
 
 
-        $this->load->view('invoice/modal_form',$view_data);
+        $this->load->view('invoice/modal_form', $view_data);
     }
     function modal_form_edit()
     {
@@ -211,7 +215,7 @@ class S_invoices extends MY_Controller {
             echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
         }
     }
-    
+
     function update()
     {
         $bukpot = $_FILES['bukpot'];
@@ -292,7 +296,7 @@ class S_invoices extends MY_Controller {
         }
     }
 
-     /* verifikasi or undo a client */
+    /* verifikasi or undo a client */
 
     function verifikasi($id)
     {
@@ -302,13 +306,14 @@ class S_invoices extends MY_Controller {
 
     /* list of clients, prepared for datatable  */
 
-    function list_data($start_date=false,$end_date=false) {
-       if(!$start_date)
-        $start_date = date("Y").'-01-01';
-      if(!$end_date)
-        $end_date = date("Y-m-d");
+    function list_data($start_date = false, $end_date = false)
+    {
+        if (!$start_date)
+            $start_date = date("Y") . '-01-01';
+        if (!$end_date)
+            $end_date = date("Y-m-d");
 
-        $list_data = $this->Sales_Invoices_model->get_details(array('start_date' => $start_date,'end_date' => $end_date))->result();
+        $list_data = $this->Sales_Invoices_model->get_details(array('start_date' => $start_date, 'end_date' => $end_date))->result();
         $result = array();
         foreach ($list_data as $data) {
             $result[] = $this->_make_row($data);
@@ -318,7 +323,8 @@ class S_invoices extends MY_Controller {
 
     /* return a row of client list  table */
 
-    private function _row_data($id) {
+    private function _row_data($id)
+    {
         $options = array(
             "id" => $id
         );
@@ -365,7 +371,7 @@ class S_invoices extends MY_Controller {
 
         $row_data = array(
             $data->spk_code ?? '-',
-            $itemss->title,
+           $itemss->title,
             // ($data->fid_custt === 0 || $data->fid_custt === NULL) ? '' : $persss->name,
             $data->inv_date,
             // anchor(get_uri("assets/images/bukpot/" . $data->code), "#" . $data->code),
@@ -414,8 +420,8 @@ class S_invoices extends MY_Controller {
         }
     }
 
-     //prepare invoice status label 
-     private function _get_invoices_status_label($invoice_info, $return_html = true)
+    //prepare invoice status label 
+    private function _get_invoices_status_label($invoice_info, $return_html = true)
     {
         // return get_order_status_label($data, $return_html);
         $invoice_status_class = "label-default";
@@ -512,18 +518,19 @@ class S_invoices extends MY_Controller {
             echo json_encode(array("success" => false, 'message' => lang('error_occurred')));
         }
     }
-    function save_edit() {
+    function save_edit()
+    {
 
         validate_submitted_data(array(
             "id" => "numeric",
-           
+
         ));
 
         //$invoice_id = $this->input->post('invoice_id');
 
         $id = $this->input->post('id');
         $rate = unformat_currency($this->input->post('invoice_item_rate'));
-        $desc=$this->input->post('invoice_item_title');
+        $desc = $this->input->post('invoice_item_title');
         //echo $this->db->last_query();exit();		
         $invoice_item_data = array(
             //"fid_invoices" => $invoice_id,
@@ -531,9 +538,9 @@ class S_invoices extends MY_Controller {
             "rate" => $rate,
             "total" => $rate,
         );
-        
+
         $invoice_item_id = $this->Sales_InvoicesItems_model->save($invoice_item_data, $id);
-        
+
         if ($invoice_item_id) {
             echo json_encode(array(
                 "success" => true,
@@ -549,33 +556,34 @@ class S_invoices extends MY_Controller {
     }
     /* delete or undo an invoice item */
 
-    function delete_item() {
+    function delete_item()
+    {
 
         validate_submitted_data(array(
             "id" => "required|numeric"
         ));
 
         $id = $this->input->post('id');
-		
-        if ($this->input->post('undo')) {
-			
-				//Ambil Data Jual
-				$get_dt_jual=$this->db->query('select * from sales_invoices_items where id="'.$id.'"')->row();
-				$jumlahBarangKembali=$get_dt_jual->quantity;
-				$idBarangKembali=$get_dt_jual->id_produk;
-				
-				$get_dt_produksi=$this->db->query('select * from produksi_barangjadi where id="'.$idBarangKembali.'" AND deleted=0')->row();
-				$jumlahBarangdiGudang=$get_dt_produksi->bj_qty-$jumlahBarangKembali;
-				$jumlahBarangKeluarGudang=$get_dt_produksi->bj_qtykeluar+$jumlahBarangKembali;
-					
-				$dataupds = array(
-					"bj_qty" => $jumlahBarangdiGudang,
-					"bj_qtykeluar" => $jumlahBarangKeluarGudang,
-				);
 
-				$updAdd=$this->Sales_InvoicesItems_model->_update_data_produksi($dataupds,$idBarangKembali);		
-			
-			
+        if ($this->input->post('undo')) {
+
+            //Ambil Data Jual
+            $get_dt_jual = $this->db->query('select * from sales_invoices_items where id="' . $id . '"')->row();
+            $jumlahBarangKembali = $get_dt_jual->quantity;
+            $idBarangKembali = $get_dt_jual->id_produk;
+
+            $get_dt_produksi = $this->db->query('select * from produksi_barangjadi where id="' . $idBarangKembali . '" AND deleted=0')->row();
+            $jumlahBarangdiGudang = $get_dt_produksi->bj_qty - $jumlahBarangKembali;
+            $jumlahBarangKeluarGudang = $get_dt_produksi->bj_qtykeluar + $jumlahBarangKembali;
+
+            $dataupds = array(
+                "bj_qty" => $jumlahBarangdiGudang,
+                "bj_qtykeluar" => $jumlahBarangKeluarGudang,
+            );
+
+            $updAdd = $this->Sales_InvoicesItems_model->_update_data_produksi($dataupds, $idBarangKembali);
+
+
             if ($this->Sales_InvoicesItems_model->delete($id, true)) {
                 $options = array("id" => $id);
                 $item_info = $this->Sales_InvoicesItems_model->get_details($options)->row();
@@ -584,23 +592,23 @@ class S_invoices extends MY_Controller {
                 echo json_encode(array("success" => false, lang('error_occurred')));
             }
         } else {
-			
-				//Ambil Data Jual
-				$get_dt_jual=$this->db->query('select * from sales_invoices_items where id="'.$id.'" AND deleted=0')->row();
-				$jumlahBarangKembali=$get_dt_jual->quantity;
-				$idBarangKembali=$get_dt_jual->id_produk;
-				
-				$get_dt_produksi=$this->db->query('select * from produksi_barangjadi where id="'.$idBarangKembali.'" AND deleted=0')->row();
-				$jumlahBarangdiGudang=$get_dt_produksi->bj_qty+$jumlahBarangKembali;
-				$jumlahBarangKeluarGudang=$get_dt_produksi->bj_qtykeluar-$jumlahBarangKembali;
-					
-				$dataupds = array(
-					"bj_qty" => $jumlahBarangdiGudang,
-					"bj_qtykeluar" => $jumlahBarangKeluarGudang,
-				);
 
-				$updAdd=$this->Sales_InvoicesItems_model->_update_data_produksi($dataupds,$idBarangKembali);		
-			
+            //Ambil Data Jual
+            $get_dt_jual = $this->db->query('select * from sales_invoices_items where id="' . $id . '" AND deleted=0')->row();
+            $jumlahBarangKembali = $get_dt_jual->quantity;
+            $idBarangKembali = $get_dt_jual->id_produk;
+
+            $get_dt_produksi = $this->db->query('select * from produksi_barangjadi where id="' . $idBarangKembali . '" AND deleted=0')->row();
+            $jumlahBarangdiGudang = $get_dt_produksi->bj_qty + $jumlahBarangKembali;
+            $jumlahBarangKeluarGudang = $get_dt_produksi->bj_qtykeluar - $jumlahBarangKembali;
+
+            $dataupds = array(
+                "bj_qty" => $jumlahBarangdiGudang,
+                "bj_qtykeluar" => $jumlahBarangKeluarGudang,
+            );
+
+            $updAdd = $this->Sales_InvoicesItems_model->_update_data_produksi($dataupds, $idBarangKembali);
+
             if ($this->Sales_InvoicesItems_model->delete($id)) {
                 $item_info = $this->Sales_InvoicesItems_model->get_one($id);
                 echo json_encode(array("success" => true, "invoice_id" => $item_info->fid_invoices, "invoice_total_view" => $this->_get_invoice_total_view($item_info->fid_invoices), 'message' => lang('record_deleted')));
@@ -612,7 +620,8 @@ class S_invoices extends MY_Controller {
 
     /* list of invoice items, prepared for datatable  */
 
-    function item_list_data($invoice_id = 0) {
+    function item_list_data($invoice_id = 0)
+    {
 
         $list_data = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $invoice_id))->result();
         $result = array();
@@ -627,20 +636,17 @@ class S_invoices extends MY_Controller {
 
     /* prepare a row of invoice item list table */
 
-    private function _make_item_row($data) {
-        $val = $this->Sales_Invoices_model->get_details(array("id" => $data->fid_invoices))->row();
-
-        {
-                    return array(
-                        modal_anchor(get_uri("sales/s_invoices/item_modal_form_edit"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit'), "data-post-id" => $data->id)),
-            $data->title,
-            to_currency($data->rate),
-            to_currency($data->total),
-
-
-        );
+    private function _make_item_row($data)
+    {
+        $val = $this->Sales_Invoices_model->get_details(array("id" => $data->fid_invoices))->row(); {
+            return array(
+                modal_anchor(get_uri("sales/s_invoices/item_modal_form_edit"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => lang('edit'), "data-post-id" => $data->id)),
+                $data->title,
+                to_currency($data->rate),
+                to_currency($data->total),
 
 
+            );
         }
     }
 
@@ -928,13 +934,13 @@ class S_invoices extends MY_Controller {
         $id = $this->input->post('id');
         $fid_sales_invoice = $this->input->post('fid_sales_invoice');
         $uploaded_name = null;
-    
+
         if (!empty($_FILES['bukti']['name'])) {
             $config['upload_path']   = './assets/images/verifikasi/';
             $config['allowed_types'] = 'jpg|jpeg|png|gif|pdf';
-    
+
             $this->load->library('upload', $config);
-    
+
             if (!$this->upload->do_upload('bukti')) {
                 $error = $this->upload->display_errors();
                 echo json_encode(array("success" => false, "message" => $error));
@@ -943,7 +949,7 @@ class S_invoices extends MY_Controller {
                 $uploaded_name = $this->upload->data('file_name');
             }
         }
-    
+
         $data = array(
             "bukti"  => $uploaded_name,
             "status" => 'terbayar',
@@ -960,8 +966,8 @@ class S_invoices extends MY_Controller {
             ));
         } else {
             echo json_encode(array("success" => false, "message" => lang('error_occurred')));
-        }        
-       // redirect(base_url('sales/s_invoices/view/' . $fid_sales_invoice));
+        }
+        // redirect(base_url('sales/s_invoices/view/' . $fid_sales_invoice));
     }
 
     function payment_delete()
@@ -1142,7 +1148,7 @@ class S_invoices extends MY_Controller {
     }
 
     /* funtions */
-    
+
     private function _get_payments_status_label($payment_info, $return_html = true)
     {
         // return get_order_status_label($data, $return_html);
@@ -1192,14 +1198,15 @@ class S_invoices extends MY_Controller {
         }
     }
 
-    function get_item_suggestion() {
+    function get_item_suggestion()
+    {
         $key = $this->input->get('q');
         $suggestion = array();
 
         $items = $this->Sales_InvoicesItems_model->get_item_suggestion($key);
 
         foreach ($items as $item) {
-            $suggestion[] = array("id" => $item->title, "text" => $item->title, "price" => $item->price , "category" => $item->category,"unit_type" => $item->unit_type);
+            $suggestion[] = array("id" => $item->title, "text" => $item->title, "price" => $item->price, "category" => $item->category, "unit_type" => $item->unit_type);
         }
 
         //$suggestion[] = array("id" => "+", "text" => "+ " . lang("create_new_item"));
@@ -1207,20 +1214,21 @@ class S_invoices extends MY_Controller {
         echo json_encode($suggestion);
     }
 
-    function get_item_suggestion_pembelian() {
+    function get_item_suggestion_pembelian()
+    {
         $key = $this->input->get('q');
         $suggestion = array();
 
         $items = $this->Sales_InvoicesItems_model->get_item_suggestion_sparepart($key);
 
         foreach ($items as $item) {
-            $suggestion[] = array("id" => $item->title, "text" => $item->title, "price" => $item->price , "description" => $item->deskripsi , "category" => 'Sparepart',"unit_type" => '');
+            $suggestion[] = array("id" => $item->title, "text" => $item->title, "price" => $item->price, "description" => $item->deskripsi, "category" => 'Sparepart', "unit_type" => '');
         }
 
         $items2 = $this->Sales_InvoicesItems_model->get_item_suggestion_material($key);
 
         foreach ($items2 as $item) {
-            $suggestion[] = array("id" => $item->pm_deskripsi, "text" => $item->pm_deskripsi, "description" => $item->deskripsi , "price" => $item->pm_unit_harga , "category" => 'Material', "unit_type" => '');
+            $suggestion[] = array("id" => $item->pm_deskripsi, "text" => $item->pm_deskripsi, "description" => $item->deskripsi, "price" => $item->pm_unit_harga, "category" => 'Material', "unit_type" => '');
         }
 
         //$suggestion[] = array("id" => "+", "text" => "+ " . lang("create_new_item"));
@@ -1228,7 +1236,8 @@ class S_invoices extends MY_Controller {
         echo json_encode($suggestion);
     }
 
-    function get_item_info_suggestion() {
+    function get_item_info_suggestion()
+    {
         $item = $this->Sales_InvoicesItems_model->get_item_info_suggestion($this->input->post("item_name"));
         if ($item) {
             echo json_encode(array("success" => true, "item_info" => $item));
@@ -1236,21 +1245,22 @@ class S_invoices extends MY_Controller {
             echo json_encode(array("success" => false));
         }
     }
-    function get_item_info_suggestion_pembelian() {
-		
-		$item1 = $this->Sales_InvoicesItems_model->get_item_info_suggestion_sparepart($this->input->post("item_name"));
-		$item2 = $this->Sales_InvoicesItems_model->get_item_info_suggestion_material($this->input->post("item_name"));
-		$hit1=count($item1);
-		$hit2=count($item2);
-		if($hit1>0){
-			$item=$item1;
-		}
-		
-		if($hit2>0){
-			$item=$item2;
-		}
-		
-		 
+    function get_item_info_suggestion_pembelian()
+    {
+
+        $item1 = $this->Sales_InvoicesItems_model->get_item_info_suggestion_sparepart($this->input->post("item_name"));
+        $item2 = $this->Sales_InvoicesItems_model->get_item_info_suggestion_material($this->input->post("item_name"));
+        $hit1 = count($item1);
+        $hit2 = count($item2);
+        if ($hit1 > 0) {
+            $item = $item1;
+        }
+
+        if ($hit2 > 0) {
+            $item = $item2;
+        }
+
+
         if ($item) {
             echo json_encode(array("success" => true, "item_info" => $item));
         } else {
@@ -1258,12 +1268,14 @@ class S_invoices extends MY_Controller {
         }
     }
 
-    private function _get_invoice_total_view($invoice_id = 0) {
+    private function _get_invoice_total_view($invoice_id = 0)
+    {
         $view_data["invoice_total_summary"] = $this->Sales_Invoices_model->get_invoices_total_summary($invoice_id);
         return $this->load->view('invoice/inv_total_section', $view_data, true);
     }
 
-    function get_invoice_status_bar($invoice_id = 0) {
+    function get_invoice_status_bar($invoice_id = 0)
+    {
 
         $view_data["invoice_info"] = $this->Sales_Invoices_model->get_details(array("id" => $invoice_id))->row();
         $view_data["client_info"] = $this->Master_Customers_model->get_details(array("id" => $view_data["invoice_info"]->fid_cust . $view_data["invoice_info"]->fid_custtt . $view_data["invoice_info"]->fid_custttt))->row();
@@ -1271,9 +1283,10 @@ class S_invoices extends MY_Controller {
         $view_data['invoice_status_label'] = $this->_get_invoices_status_label($view_data["invoice_info"]);
         $this->load->view('invoice/inv_status_bar', $view_data);
     }
-    
 
-     function preview($invoice_id = 0, $show_close_preview = false) {
+
+    function preview($invoice_id = 0, $show_close_preview = false)
+    {
 
 
 
@@ -1298,7 +1311,8 @@ class S_invoices extends MY_Controller {
         }
     }
 
-    function download_pdf($invoice_id = 0) {
+    function download_pdf($invoice_id = 0)
+    {
 
         if ($invoice_id) {
             $invoice_data = get_s_invoices_making_data($invoice_id);
@@ -1311,7 +1325,8 @@ class S_invoices extends MY_Controller {
     }
 
 
-    function send_invoice_modal_form($invoice_id) {
+    function send_invoice_modal_form($invoice_id)
+    {
 
 
         if ($invoice_id) {
@@ -1325,8 +1340,7 @@ class S_invoices extends MY_Controller {
             $contact_last_name = "";
             $contacts_dropdown = array();
             foreach ($contacts as $contact) {
-                $contacts_dropdown[$contact->id] = $contact->name. " (" . lang("primary_contact") . ")";
-                
+                $contacts_dropdown[$contact->id] = $contact->name . " (" . lang("primary_contact") . ")";
             }
 
 
@@ -1354,7 +1368,8 @@ class S_invoices extends MY_Controller {
         }
     }
 
-    function send_invoice() {
+    function send_invoice()
+    {
 
         validate_submitted_data(array(
             "id" => "required|numeric"
@@ -1401,17 +1416,18 @@ class S_invoices extends MY_Controller {
     }
 
 
-    function checkJournal(){
+    function checkJournal()
+    {
         $id = $this->input->post('inv_id');
 
 
         validate_submitted_data(array(
             "code" => "required",
             // "paid_date" => "required"
-            
+
         ));
 
-        
+
         $code = $this->input->post("code");
         $voucher_code = "";
         $date = $this->input->post("paid_date");
@@ -1432,32 +1448,32 @@ class S_invoices extends MY_Controller {
         $view_data = array();
         $currency = $this->input->post('currency');
         $curr = 12;
-        if($currency == "IDR"){
+        if ($currency == "IDR") {
             $curr = 12;
         }
-        if($currency == "USD"){
+        if ($currency == "USD") {
             $curr = 13;
         }
 
 
-            $ppn_coa = 192;
+        $ppn_coa = 192;
 
 
-            if($pay_type == "CREDIT"){
+        if ($pay_type == "CREDIT") {
 
 
 
-                
-                 $query = $this->Sales_InvoicesItems_model->get_hpp($id);
-                 $query_hpp = $this->Sales_InvoicesItems_model->get_hpp($id);
-                 foreach($query->result() as $row){
-                    echo checkJournal($fid_project,$code,$voucher_code,$date,$type,$row->title,$row->sales_journal,0,$row->total);
-                 }
 
-                echo checkJournal($fid_project,$code,$voucher_code,$date,$type,$description,$curr,$amount,0);
-                echo checkJournal($fid_project,$code,$voucher_code,$date,$type,$description,$ppn_coa,0,$ppn);
+            $query = $this->Sales_InvoicesItems_model->get_hpp($id);
+            $query_hpp = $this->Sales_InvoicesItems_model->get_hpp($id);
+            foreach ($query->result() as $row) {
+                echo checkJournal($fid_project, $code, $voucher_code, $date, $type, $row->title, $row->sales_journal, 0, $row->total);
+            }
 
-                /*    foreach ($query_hpp->result() as $key) {
+            echo checkJournal($fid_project, $code, $voucher_code, $date, $type, $description, $curr, $amount, 0);
+            echo checkJournal($fid_project, $code, $voucher_code, $date, $type, $description, $ppn_coa, 0, $ppn);
+
+            /*    foreach ($query_hpp->result() as $key) {
                     //print_r($key);exit();
                         if($key->hpp_journal!='0'){
                          echo checkJournal($fid_project,$code,$voucher_code,$date,$type,"HPP - ".$key->title,$key->hpp_journal,$key->basic_price,0);
@@ -1467,29 +1483,24 @@ class S_invoices extends MY_Controller {
                         echo checkJournal($fid_project,$code,$voucher_code,$date,$type,"HPP - ".$key->title,$key->lawan_hpp,0,$key->basic_price);
                         }
                     }          */
+        }
+        if ($pay_type == "CASH") {
+            echo checkJournal($fid_project, $code, $voucher_code, $date, $type, $description, $fid_coa, $amount, 0);
 
+            echo checkJournal($fid_project, $code, $voucher_code, $date, $type, $description, $ppn_coa, 0, $ppn);
+            $query = $this->Sales_InvoicesItems_model->get_hpp($id);
+            $query_hpp = $this->Sales_InvoicesItems_model->get_hpp($id);
+            foreach ($query->result() as $row) {
+                echo checkJournal($fid_project, $code, $voucher_code, $date, $type, $row->title, $row->sales_journal, 0, $row->total);
+            }
 
-                 
-             }if($pay_type == "CASH"){
-                echo checkJournal($fid_project,$code,$voucher_code,$date,$type,$description,$fid_coa,$amount,0);
-                
-                echo checkJournal($fid_project,$code,$voucher_code,$date,$type,$description,$ppn_coa,0,$ppn);
-                 $query = $this->Sales_InvoicesItems_model->get_hpp($id);
-                 $query_hpp = $this->Sales_InvoicesItems_model->get_hpp($id);
-                foreach($query->result() as $row){
-                    echo checkJournal($fid_project,$code,$voucher_code,$date,$type,$row->title,$row->sales_journal,0,$row->total);
-
-                    
-                }
-
-                /*foreach ($query_hpp->result() as $key) {
+            /*foreach ($query_hpp->result() as $key) {
                     if($key->hpp_journal!='0')
                     echo checkJournal($fid_project,$code,$voucher_code,$date,$type,"HPP - ".$key->title,$key->hpp_journal,$key->basic_price,0);
                     if($key->lawan_hpp!='0')
                     echo checkJournal($fid_project,$code,$voucher_code,$date,$type,"HPP - ".$key->title,$key->lawan_hpp,0,$key->basic_price);
                 }*/
-
-             }
+        }
     }
 }
 

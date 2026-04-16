@@ -34,6 +34,12 @@
         </div>
     </div>-->
     <div class="form-group">
+        <label for="inv_date" class="col-md-3">Proyek</label>
+        <div class=" col-md-9">
+             <input id="project_id_input" name="project_id" class="form-control" style="width: 100%;">
+        </div>
+    </div>
+    <div class="form-group">
         <label for="inv_date" class="col-md-3">Tanggal</label>
         <div class=" col-md-9">
             <?php
@@ -88,6 +94,38 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
+
+    $('#project_id_input').select2({
+            placeholder: 'Cari Proyek...',
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: '<?= base_url("purchase/p_invoices/get_all_project") ?>',
+                type: "POST",
+                dataType: 'json',
+                delay: 250,
+                data: function(term, page) {
+                    return {
+                        '<?php echo $this->security->get_csrf_token_name(); ?>': '<?php echo $this->security->get_csrf_hash(); ?>',
+                        search: term // Only send the search keyword
+                    };
+                    console.log(term);
+
+                },
+                results: function(data) {
+                    return {
+                        results: data.data.map(function(item) {
+                            return {
+                                id: item.sales_invoices_id, // Use the sales_invoices_id as the option value
+                                text: item.title // Use the title as the option text
+                            };
+                        })
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1
+        });
 
         $("#invoices-form .select2").select2();
         setDatePicker("#inv_date");

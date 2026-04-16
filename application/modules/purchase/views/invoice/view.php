@@ -2,7 +2,7 @@
     <div style="max-width: 1000px; margin: auto;">
         <div class="page-title clearfix mt15">
             <h1> No Akun : <?php echo $invoice_info->code; ?>
-                
+
             </h1>
             <div class="title-button-group">
                 <span class="dropdown inline-block">
@@ -11,30 +11,35 @@
                         <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
-                        
+
                         <li role="presentation"><?php echo anchor(get_uri("purchase/p_invoices/download_pdf/" . $invoice_info->id), "<i class='fa fa-download'></i> " . lang('download_pdf'), array("title" => lang('download_pdf'))); ?> </li>
                         <li role="presentation"><?php echo anchor(get_uri("purchase/p_invoices/preview/" . $invoice_info->id), "<i class='fa fa-search'></i> " . 'Preview', array("title" => 'Preview'), array("target" => "_blank")); ?> </li>
                         <li role="presentation" class="divider"></li>
-                        <?php if($invoice_info->status != "paid"){ ?>
-                        <li role="presentation"><?php echo modal_anchor(get_uri("purchase/p_invoices/modal_form_edit"), "<i class='fa fa-edit'></i> " . 'Edit Pembelian', array("title" => 'Edit Pembelian', "data-post-id" => $invoice_info->id, "role" => "menuitem", "tabindex" => "-1")); ?> </li>
+                        <?php if ($invoice_info->status != "paid") { ?>
+                            <li role="presentation"><?php echo modal_anchor(get_uri("purchase/p_invoices/modal_form_edit"), "<i class='fa fa-edit'></i> " . 'Edit Pembelian', array("title" => 'Edit Pembelian', "data-post-id" => $invoice_info->id, "role" => "menuitem", "tabindex" => "-1")); ?> </li>
 
                         <?php } ?>
                     </ul>
-                        </span>
-                <?php if($invoice_info->paid != "paid" && $invoice_info->status != "posting" && $invoice_info->is_verified !== "1") echo modal_anchor(get_uri("purchase/p_invoices/item_modal_form"), "<i class='fa fa-plus-circle'></i> " . 'Tambah Barang', array("class" => "btn btn-default", "title" => 'Tambah Barang', "data-post-invoice_id" => $invoice_info->id)); ?>            </div>
+                </span>
+                <?php if ($invoice_info->paid != "paid" && $invoice_info->status != "posting" && $invoice_info->is_verified !== "1") echo modal_anchor(get_uri("purchase/p_invoices/item_modal_form"), "<i class='fa fa-plus-circle'></i> " . 'Tambah Barang', array("class" => "btn btn-default", "title" => 'Tambah Barang', "data-post-invoice_id" => $invoice_info->id)); ?>
+            </div>
         </div>
 
         <div id="invoice-status-bar">
             <?php $this->load->view("invoice/inv_status_bar"); ?>
         </div>
 
-        
+
 
         <div class="mt15">
             <div class="panel panel-default p15 b-t">
                 <div class="clearfix p20">
                     <!-- small font size is required to generate the pdf, overwrite that for screen -->
-                    <style type="text/css"> .invoice-meta {font-size: 100% !important;}</style>
+                    <style type="text/css">
+                        .invoice-meta {
+                            font-size: 100% !important;
+                        }
+                    </style>
 
                     <?php
                     $color = get_setting("invoice_color");
@@ -46,7 +51,7 @@
                         "client_info" => $client_info,
                         "color" => $color,
                         "invoice_info" => $invoice_info,
-                        
+
                     );
 
                     if ($invoice_style === "style_2") {
@@ -56,9 +61,24 @@
                     }
                     ?>
                 </div>
+                <?php if($project_id == 0){ ?>
+                <div style="margin:10px 0 30px; padding-bottom: 20px;">
+                    <form action="<?php echo base_url() . 'purchase/p_invoices/update_project_id/' . $invoice_info->id; ?>" method="POST" class="general-form">
+                        <div class="form-group">
+                            <label for="project_id_input" class="col-md-3">Pilih Proyek</label>
+                            <div class="col-md-9">
+                                <div style="display: flex; gap: 10px;">
+                                    <input id="project_id_input" name="project_id" class="form-control" style="width: 100%; background-color: #fff3cd;">
+                                    <button type="submit" name="search" class="btn btn-default" value="2" style="min-width: 100px;">Simpan</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <?php } ?>
 
                 <div class="table-responsive mt15 pl15 pr15">
-                    <table id="invoice-item-table" class="display" width="100%">            
+                    <table id="invoice-item-table" class="display" width="100%">
                     </table>
                 </div>
 
@@ -75,9 +95,9 @@
         </div>
 
 
-        
 
-           
+
+
     </div>
 </div>
 
@@ -86,25 +106,71 @@
 <script type="text/javascript">
     // window.onload = updateInvoiceStatusBar();
     RELOAD_VIEW_AFTER_UPDATE = true;
-    $(document).ready(function () {
+    $(document).ready(function() {
+        $('#project_id_input').select2({
+            placeholder: 'Cari Proyek...',
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: '<?= base_url("purchase/p_invoices/get_all_project") ?>',
+                type: "POST",
+                dataType: 'json',
+                delay: 250,
+                data: function(term, page) {
+                    return {
+                        '<?php echo $this->security->get_csrf_token_name(); ?>': '<?php echo $this->security->get_csrf_hash(); ?>',
+                        search: term // Only send the search keyword
+                    };
+                    console.log(term);
+
+                },
+                results: function(data) {
+                    return {
+                        results: data.data.map(function(item) {
+                            return {
+                                id: item.sales_invoices_id, // Use the sales_invoices_id as the option value
+                                text: item.title // Use the title as the option text
+                            };
+                        })
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1
+        });
         $("#invoice-item-table").appTable({
-            source: '<?php echo_uri("purchase/p_invoices/item_list_data/". $invoice_info->id) ?>',
-            order: [[0, "asc"]],
-            hideTools: true,
-            columns: [
-                {title: '<i class="fa fa-bars"></i>', "class": "text-center option w100"},
-                {title: 'Nama Barang'},              
-                {title: 'Qty.', "class": "text-right w15p"},
-                {title: 'Harga beli', "class": "text-right w15p"},
-                {title: 'Total', "class": "text-right w15p"}
+            source: '<?php echo_uri("purchase/p_invoices/item_list_data/" . $invoice_info->id) ?>',
+            order: [
+                [0, "asc"]
             ],
-            onDeleteSuccess: function (result) {
+            hideTools: true,
+            columns: [{
+                    title: '<i class="fa fa-bars"></i>',
+                    "class": "text-center option w100"
+                },
+                {
+                    title: 'Nama Barang'
+                },
+                {
+                    title: 'Qty.',
+                    "class": "text-right w15p"
+                },
+                {
+                    title: 'Harga beli',
+                    "class": "text-right w15p"
+                },
+                {
+                    title: 'Total',
+                    "class": "text-right w15p"
+                }
+            ],
+            onDeleteSuccess: function(result) {
                 $("#invoice-total-section").html(result.invoice_total_view);
                 if (typeof updateInvoiceStatusBar == 'function') {
                     updateInvoiceStatusBar(result.invoice_id);
                 }
             },
-            onUndoSuccess: function (result) {
+            onUndoSuccess: function(result) {
                 $("#invoice-total-section").html(result.invoice_total_view);
                 if (typeof updateInvoiceStatusBar == 'function') {
                     updateInvoiceStatusBar(result.invoice_id);
@@ -112,21 +178,19 @@
             }
         });
 
-        
+
     });
 
-    updateInvoiceStatusBar = function (invoiceId) {
+    updateInvoiceStatusBar = function(invoiceId) {
         $.ajax({
             url: "<?php echo get_uri("sales/s_invoices/get_invoice_status_bar"); ?>/" + invoiceId,
-            success: function (result) {
+            success: function(result) {
                 if (result) {
                     $("#invoice-status-bar").html(result);
                 }
             }
         });
     };
-
-
 </script>
 
 <?php
@@ -139,4 +203,3 @@ load_js(array(
     "assets/js/summernote/summernote.min.js",
 ));
 ?>
-

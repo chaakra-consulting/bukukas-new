@@ -13,6 +13,7 @@ class Purchase_Invoices_model extends Crud_model {
     $start_date = get_array_value($options, "start_date");
     $end_date = get_array_value($options, "end_date");
     $account_number = get_array_value($options, "account_number");
+    $project_id = get_array_value($options, "project_id");
 
     $where = "deleted = 0";
 
@@ -26,6 +27,9 @@ class Purchase_Invoices_model extends Crud_model {
 
     if ($account_number) {
         $where .= " AND code = '$account_number'";
+    }
+    if ($project_id) {
+        $where .= " AND project_id = $project_id";
     }
     
     // if ($this->login_user->user_type != "manager") {
