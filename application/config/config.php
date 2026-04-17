@@ -1,6 +1,6 @@
 <?php
 
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
 /*
   |--------------------------------------------------------------------------
@@ -26,7 +26,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 
 
-$config['base_url'] = 'https://bukukas.chaakra-consulting.com/';
+$config['base_url'] = 'http://bukukas.test/';
 
 
 //try to catch the base url in case of undefined base url 
@@ -36,10 +36,10 @@ $config['base_url'] = 'https://bukukas.chaakra-consulting.com/';
 
 //    $domain = preg_replace('/index.php.*/', '', $domain);
 //    if (!empty($_SERVER['HTTPS'])) {
- //       $config['base_url'] = 'https://' . $domain;
- //   } else {
- //       $config['base_url'] = 'http://' . $domain;
- //   }
+//       $config['base_url'] = 'https://' . $domain;
+//   } else {
+//       $config['base_url'] = 'http://' . $domain;
+//   }
 //}
 
 /*

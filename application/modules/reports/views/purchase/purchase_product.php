@@ -105,6 +105,7 @@
                         <tr>
                             <th>Rincian</th>
                             <th style="text-align: center;">Pembelian</th>
+                            <th style="text-align: center;">Proyek</th>
                             <th style="text-align: center;">Nomer Akun</th>
                             <th style="text-align: center;">Jumlah</th>
                             <th style="text-align: center;">Total Rupiah</th>
@@ -113,6 +114,9 @@
                             <?php $jumlah = 0;
                             $qty = 0;
                             foreach ($purchase_report->result() as $row) { ?>
+                            <?php
+                            $proyek = $this->db->query("SELECT title FROM sales_invoices_items WHERE id = '$row->project_id'")->row()->title;
+                            ?>
                                 <tr>
                                     <td><?php echo $row->memo; ?></td>
                                     <td style="text-align: center;"><?php
@@ -122,6 +126,7 @@
                                                                         echo $row->paid;
                                                                     }
                                                                     ?></td>
+                                    <td style="text-align: center;"><?php echo $proyek ?? "-"; ?></td>
                                     <td style="text-align: center;"><?php echo $row->code; ?></td>
                                     <td style="text-align: center;"><?php echo $row->qty;
                                                                     $qty += $row->qty; ?></td>
@@ -134,7 +139,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <th colspan="3" style="text-align: right;">TOTAL :</th>
+                                <th colspan="4" style="text-align: right;">TOTAL :</th>
                                 <th style="text-align: center;"><?php echo $qty; ?></th>
                                 <th style="text-align: right;"><?php echo to_currency($jumlah, false); ?></th>
                             </tr>
