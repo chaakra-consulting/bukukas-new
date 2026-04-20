@@ -9,7 +9,7 @@
  */
 if (!function_exists('to_currency')) {
 
-    function to_currency($number = 0, $currency = "", $no_of_decimals = 2) {
+    function to_currency($number = 0, $currency = "", $no_of_decimals = 3) {
         $decimal_separator = get_setting("decimal_separator");
         $thousand_separator = get_setting("thousand_separator");
 
