@@ -16,7 +16,7 @@
         "post_data" => $post_data,
         "invoice_total_summary" => $invoice_total_summary
     );
-    print_r($invoice_total_summary);exit;
+    // print_r($invoice_total_summary);exit;
     if ($invoice_style === "style_2") {
         $this->load->view('inv_parts_payments/header_style_2.php', $data);
     } else {
