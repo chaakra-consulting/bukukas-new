@@ -18,6 +18,7 @@ class P_invoices extends MY_Controller
     {
         $search = $this->input->post('search');
         $this->db->from('sales_invoices_items');
+        $this->db->where('deleted',0);
         if (!empty($search) && $search !== 'null') {
             $this->db->like('sales_invoices_items.title', $search);
         }
