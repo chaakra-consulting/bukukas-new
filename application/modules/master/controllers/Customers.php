@@ -22,6 +22,27 @@ class Customers extends MY_Controller
         $this->template->rander("customers/index", $view_data);
     }
 
+    function get_list_data() {
+        $search = $this->input->post('search');
+        $this->db->from('master_customers');
+        if (!empty($search) && $search !== 'null') {
+            $this->db->like('master_customers.name', $search);
+        }
+        $this->db->select(
+            'master_customers.name as name, master_customers.id as master_customers_id'
+        );
+        $query = $this->db->get();
+        $results = $query->result_array();
+
+        $response = array(
+            'data' => $results,
+        );
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
     /* load client add/edit modal */
 
     function modal_form()
@@ -238,7 +259,7 @@ class Customers extends MY_Controller
             $data->npwp,
             $data->name,
             $data->code ?? '-',
-            $data->jenis,
+            $this->get_jenis($data->code)['bentuk'] ?? '-',
             $data->address,
             $data->email,
             $data->contact,
@@ -264,7 +285,35 @@ class Customers extends MY_Controller
 
         $this->load->view('customers/view', $view_data);
     }
+
+    function get_jenis($code)
+    {
+        $code = explode('.', $code)[0];
+        switch ($code) {
+            case '01':
+                return ['jenis' => 'DINAS', 'bentuk' => "DINAS"];
+            case '02':
+                return ['jenis' => 'SWASTA', 'bentuk' => 'KOPERASI'];
+            case '03':
+                return ['jenis' => 'RUMAH SAKIT', 'bentuk' => "RUMAH SAKIT"];
+            case '04':
+                return ['jenis' => 'BUMN', 'bentuk' => "BUMN"];
+            case '05':
+                return ['jenis' => 'BUMD', 'bentuk' => "BUMD"];
+            case '06':
+                return ['jenis' => 'SWASTA', 'bentuk' => 'SWASTA PT'];
+            case '07':
+                return ['jenis' => 'SWASTA', 'bentuk' => 'SWASTA CV'];
+            case '08':
+                return ['jenis' => 'SEKOLAH', 'bentuk' => "SEKOLAH"];
+            case '09':
+                return ['jenis' => 'SWASTA', 'bentuk' => 'SWASTA UD']; // Or 'FIRMA'
+            default:
+                return ['jenis' => null, 'bentuk' => null];
+        }
+    }
 }
+
 
 /* End of file clients.php */
 /* Location: ./application/controllers/clients.php */

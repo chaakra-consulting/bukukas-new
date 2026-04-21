@@ -73,6 +73,22 @@
                     </div>
                 </div> -->
 
+                 <?php if($item_info->customer_id == 0){ ?>
+                <div style="margin:10px 0 30px; padding-bottom: 20px;">
+                    <form action="<?php echo base_url() . 'sales/s_invoices/save_edited_invoice/' . $item_info->id; ?>" method="POST" class="general-form">
+                        <div class="form-group">
+                            <label for="customer_id" class="col-md-3">Pilih Instansi</label>
+                            <div class="col-md-9">
+                                <div style="display: flex; gap: 10px;">
+                                    <input id="customer_id" name="customer_id" class="form-control" style="width: 100%; background-color: #fff3cd;">
+                                    <button type="submit" name="search" class="btn btn-default" value="2" style="min-width: 100px;">Simpan</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <?php } ?>
+
                 <div class="table-responsive mt15 pl15 pr15">
                 <!-- <?php echo modal_anchor(get_uri("sales/s_invoices/payment_modal_form"), "<i class='fa fa-plus-circle'></i> " . "Tambah Invoice", array("class" => "btn btn-default", "title" => "Tambah Invoice", "data-post-invoice_id" => $invoice_info->id)); ?> -->
                 <?php if ($count_payment >= $invoice_info->termin): ?>
@@ -123,6 +139,38 @@
     // window.onload = updateInvoiceStatusBar();
     RELOAD_VIEW_AFTER_UPDATE = true;
     $(document).ready(function () {
+
+    $('#customer_id').select2({
+            placeholder: 'Cari Instansi...',
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: '<?= base_url("sales/s_invoices/costumer_list_data") ?>',
+                type: "POST",
+                dataType: 'json',
+                delay: 250,
+                data: function(term, page) {
+                    return {
+                        '<?php echo $this->security->get_csrf_token_name(); ?>': '<?php echo $this->security->get_csrf_hash(); ?>',
+                        search: term // Only send the search keyword
+                    };
+                    console.log(term);
+
+                },
+                results: function(data) {
+                    return {
+                        results: data.data.map(function(item) {
+                            return {
+                                id: item.id,
+                                text: item.text
+                            };
+                        })
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1
+        });
         $("#invoice-item-table").appTable({
             source: '<?php echo_uri("sales/s_invoices/item_list_data/". $invoice_info->id) ?>',
             order: [[0, "asc"]],

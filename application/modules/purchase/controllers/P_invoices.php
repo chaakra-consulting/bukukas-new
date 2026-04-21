@@ -14,12 +14,15 @@ class P_invoices extends MY_Controller
         $this->load->model('purchase/Purchase_InvoicesItems_model');
     }
 
-    function get_all_project()
+    function get_all_project($customer_id = null)
     {
         $search = $this->input->post('search');
         $this->db->from('sales_invoices_items');
         if (!empty($search) && $search !== 'null') {
             $this->db->like('sales_invoices_items.title', $search);
+        }
+        if ($customer_id) {
+            $this->db->where('sales_invoices_items.customer_id', $customer_id);
         }
         $this->db->select(
             'sales_invoices_items.title as title, sales_invoices_items.id as sales_invoices_id'

@@ -34,6 +34,34 @@ class S_invoices extends MY_Controller
         $this->template->rander("invoice/index", $view_data);
     }
 
+    function costumer_list_data(){
+          $search = $this->input->post('search');
+
+        $list_data =  $this->db->from('master_customers');
+        if ($search) {
+            $list_data->where("name LIKE '%" . $search . "%'");
+        }
+        $results = $list_data->select('id as id,name as text')->get()->result();
+       $response = array(
+            'data' => $results,
+        );
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    function save_edited_invoice($project_id){
+        $customer_id = $this->input->post('customer_id');
+        $data = array(
+            "customer_id" => $customer_id,
+        );
+        $save_id =$this->db->where('id', $project_id)->update('sales_invoices_items', $data);
+        if ($save_id) {
+           redirect(base_url() . 'sales/s_invoices');
+        }
+        
+    }
 
 
     function modal_form()
@@ -106,9 +134,9 @@ class S_invoices extends MY_Controller
         $data = array(
             "code" => $bukpot,
             "spk_code" => $this->input->post('spk_code'),
-            "fid_custt" => $this->input->post('fid_custt'),
-            "fid_custtt" => $this->input->post('fid_custtt'),
-            "fid_custttt" => $this->input->post('fid_custttt'),
+            "fid_custt" => $this->input->post('fid_custt') ?? 0,
+            "fid_custtt" => $this->input->post('fid_custtt') ?? 0,
+            "fid_custttt" => $this->input->post('fid_custttt') ?? 0,
             "fid_cust" => $this->input->post('fid_cust'),
             "potongan" => $this->input->post('potongan'),
             "status" => 'draft',
@@ -128,6 +156,7 @@ class S_invoices extends MY_Controller
             "fid_invoices" => $save_id,
             "title" => $this->input->post('invoice_item_title'),
             "rate" => $rate,
+            "customer_id" => $this->input->post('fid_cust'),
             "total" => $rate,
         );
         $invoice_item_id = $this->Sales_InvoicesItems_model->save($invoice_item_data, $item_id);
@@ -349,8 +378,9 @@ class S_invoices extends MY_Controller
         $persss = $this->Master_Perusahaan_model->get_details(array("id" => $data->fid_custt))->row();
         $taxes = $this->Taxes_model->get_details(array("id" => $data->fid_tax))->row();
         $invoice_total_summary = $this->Sales_Invoices_model->get_invoices_total_summary($data->id);
-        $itemss = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $data->id))->row();
+        $sales_invoices_item = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $data->id))->row();
         $payment = $this->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $data->id))->result();
+        $customer = $this->Master_Customers_model->get_details(array("id" => $sales_invoices_item->customer_id))->row();
 
         $count_payment_all = $data->termin ?? 0;
         $originalDate = $data->inv_date;
@@ -371,7 +401,7 @@ class S_invoices extends MY_Controller
 
         $row_data = array(
             $data->spk_code ?? '-',
-           $itemss->title,
+           $sales_invoices_item->title,
             // ($data->fid_custt === 0 || $data->fid_custt === NULL) ? '' : $persss->name,
             $data->inv_date,
             // anchor(get_uri("assets/images/bukpot/" . $data->code), "#" . $data->code),
@@ -382,8 +412,8 @@ class S_invoices extends MY_Controller
             to_currency($totalsemua),
             // to_currency($payment_done_subtotal),
             $this->_get_all_payment_status_label($payment_status, true, $originalDate, $count_payment_all),
-            $query->jenis,
-            $query->name,
+            $query->bentuk ? $query->jenis."(".$query->bentuk.")" : $query->jenis,
+            $sales_invoices_item->customer_id != 0 ? $customer->name : '-',
         );
         if ($data->is_verified == "0") {
             $row_data[] = modal_anchor(get_uri("sales/s_invoices/modal_form_edit/" . $data->id), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => "Edit Invoices"))
@@ -408,9 +438,10 @@ class S_invoices extends MY_Controller
                 $view_data['invoice_status_label'] = $this->_get_invoices_status_label($view_data["invoice_info"]);
 
                 $view_data['item_info'] = $this->Sales_InvoicesItems_model->get_details(array("fid_invoices" => $id))->row();
+                $view_data['customer_info'] = $this->Master_Customers_model->get_details(array("id" => $view_data['item_info']->customer_id))->row();
                 $payment = $this->Sales_InvoicesPayments_model->get_details(array("fid_sales_invoice" => $id))->result();
                 $view_data['count_payment'] = count($payment);
-
+                // print_r(  $view_data['item_info']->customer_id != 0 ?  $view_data['customer_info']->name : "-");
                 $this->template->rander("invoice/view", $view_data);
             } else {
                 show_404();

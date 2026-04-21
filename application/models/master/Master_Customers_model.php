@@ -28,7 +28,7 @@ class Master_Customers_model extends Crud_model {
         if ($codeIsNull){
             $where .= " AND code IS NOT NULL AND code <> ''";
         }
-        $data = $this->db->query("SELECT * FROM $this->table WHERE  deleted = 0  ".$where." ORDER BY id DESC");
+        $data = $this->db->query("SELECT * FROM $this->table WHERE  deleted = 0  ".$where." ORDER BY code DESC");
         return $data;
     }
 

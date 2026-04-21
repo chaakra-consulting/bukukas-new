@@ -25,11 +25,11 @@
     <div class="info-label">Instansi</div>
     <div class="info-colon">:</div>
     <div class="info-value">
-        <?php echo modal_anchor(
-            get_uri("master/customers/view/" . $client_info->id),
-            $client_info->name,
-            ["data-post-id" => $client_info->id,"title" => "Vendors Info"]
-        ); ?>
+        <?php echo  $item_info->customer_id != 0 ?  modal_anchor(
+            get_uri("master/customers/view/" . $customer_info->id),
+            $customer_info->name,
+            ["data-post-id" => $customer_info->id,"title" => "Vendors Info"]
+        ) : "-"; ?>
         <?php echo $invoice_status_label; ?>
     </div>
 </div>

@@ -83,89 +83,53 @@
 
 <script type="text/javascript">
    $(document).ready(function () {
-    var max = <?= json_encode((int)$invoice_total_summary->payment_sisa) ?>;
+    // 1. Ensure max is a float
+    var max = parseFloat(<?= json_encode((float)$invoice_total_summary->payment_sisa) ?>) || 0;
     var $total = $('#total');
 
+    // 2. Initialize maskMoney
     $total.maskMoney({
-        precision: 0,
+        precision: 3,
         thousands: '.',
-        decimal: ','
+        decimal: ',',
+        allowZero: true
     });
 
+    // 3. Helper to get pure math value
     function getRawVal() {
         var v = $total.val() || '';
-        v = v.replace(/[^\d]/g, '');
-        return v === '' ? 0 : parseInt(v, 10);
+        v = v.split('.').join(''); // Remove thousand separators
+        v = v.replace(',', '.');   // Swap comma for dot for JS math
+        var parsed = parseFloat(v);
+        return isNaN(parsed) ? 0 : parsed;
     }
 
+    // 4. Set Initial Value
     var initialRaw = getRawVal();
-    if (initialRaw) {
+    if (initialRaw > 0) {
         $total.maskMoney('mask', initialRaw);
     }
 
-    $total.on('keydown', function (e) {
-        var key = e.which || e.keyCode;
-
-        if (e.ctrlKey || e.metaKey || key === 8 || key === 46 || key === 9 || (key >= 35 && key <= 40)) {
-            return;
-        }
-
-        var isDigit = (key >= 48 && key <= 57) || (key >= 96 && key <= 105);
-        if (!isDigit) {
-            return;
-        }
-
-        var digit = (key >= 96) ? key - 96 : key - 48;
+    // 5. Clamp logic (Removed 'input' to prevent wiping the comma mid-typing)
+    $total.on('keyup blur', function () {
         var raw = getRawVal();
-
-        var selStart = this.selectionStart, selEnd = this.selectionEnd || 0;
-        var selectionLength = (selEnd - selStart) || 0;
-
-        var next;
-        if (selectionLength > 0) {
-            var curStr = ($total.val() || '').replace(/[^\d]/g, '');
-            var before = curStr.substring(0, selStart);
-            var after = curStr.substring(selEnd);
-            var predicted = before + String(digit) + after;
-            next = predicted === '' ? 0 : parseInt(predicted, 10);
-        } else {
-            // append digit di akhir (karena maskMoney memformat, treat raw sebagai current digits)
-            next = parseInt(String(raw) + String(digit), 10);
-        }
-
-        if (next > max) {
-            e.preventDefault();
-            // set langsung ke max (format ulang)
+        if (raw > max) {
             $total.maskMoney('mask', max);
         }
     });
 
-    // sanitize & clamp pada input / paste (untuk clipboard, drag, dll)
-    $total.on('input paste', function () {
-        setTimeout(function () {
-            var raw = getRawVal();
-            if (raw > max) {
-                $total.maskMoney('mask', max);
-            } else {
-                // reformat agar selalu konsisten
-                $total.maskMoney('mask', raw);
-            }
-        }, 0);
-    });
-
-    // sebelum submit, kirim angka murni tanpa pemisah
+    // 6. Strip formatting before sending to the server
     $('#invoice-item-form').on('submit', function () {
         var raw = getRawVal();
-        $total.val(raw);
+        $total.val(raw); 
     });
 
+    // --- Rest of your UI initialization ---
     $("#invoice-item-form .select2").select2();
     var maxDate = "<?php echo !empty($invoice_info->inv_contract_date) ? date('Y-m-d', strtotime($invoice_info->inv_contract_date)) : ''; ?>";
 
     if (maxDate) {
-        setDatePicker("#payment_date", {
-            endDate: maxDate
-        });
+        setDatePicker("#payment_date", { endDate: maxDate });
     } else {
         setDatePicker("#payment_date");
     }

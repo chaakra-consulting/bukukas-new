@@ -4,8 +4,9 @@
         margin-right: 0;
         margin-left: 0;
     }
-    .row.no-gutters > [class^="col-"],
-    .row.no-gutters > [class*=" col-"] {
+
+    .row.no-gutters>[class^="col-"],
+    .row.no-gutters>[class*=" col-"] {
         padding-right: 0;
         padding-left: 0;
     }
@@ -21,26 +22,21 @@
         <div id="invoice-status-bar" class="panel panel-default  p5 no-border m0">
 
             <form action="" method="GET" role="form" class="general-form">
-                <div class="row no-gutters">
-                    <div class="col-md-2 col-sm-4 col-xs-12">
+
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 col-xs-12">
                         <div class="form-group">
                             <label for="start_date">Start Date</label>
                             <input type="text" class="form-control" id="start_date" name="start" autocomplete="off" placeholder="YYYY-MM-DD" value="<?php echo isset($_GET['start']) ? htmlspecialchars($_GET['start']) : ''; ?>">
                         </div>
                     </div>
-                    <div class="col-md-2 col-sm-4 col-xs-12">
+                    <div class="col-md-3 col-sm-6 col-xs-12">
                         <div class="form-group">
                             <label for="end_date">End Date</label>
                             <input type="text" class="form-control" id="end_date" name="end" autocomplete="off" placeholder="YYYY-MM-DD" value="<?php echo isset($_GET['end']) ? htmlspecialchars($_GET['end']) : ''; ?>">
                         </div>
                     </div>
-                    <div class="col-md-2 col-sm-4 col-xs-12">
-                        <div class="form-group">
-                            <label for="project_id">Proyek</label>
-                            <input type="text" id="project_id" name="project_id" class="form-control select2" placeholder="Project ID" style="width: 100%;">
-                        </div>
-                    </div>
-                    <div class="col-md-2 col-sm-4 col-xs-12" style="padding-left: 10px;">
+                    <div class="col-md-3 col-sm-6 col-xs-12">
                         <div class="form-group">
                             <label for="paid">Status</label>
                             <select name="paid" id="paid" class="form-control">
@@ -49,7 +45,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-2 col-sm-4 col-xs-12">
+                    <div class="col-md-3 col-sm-6 col-xs-12">
                         <div class="form-group">
                             <label for="code">Nomor Akun</label>
                             <select name="code" id="code" class="form-control">
@@ -70,9 +66,24 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-2 col-sm-4 col-xs-12">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 col-sm-6 col-xs-12">
                         <div class="form-group">
-                            <label class="hidden-xs">&nbsp;</label>
+                            <label for="customer">Nama Instansi</label>
+                            <input type="text" id="customer" class="form-control" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6 col-xs-12">
+                        <div class="form-group">
+                            <label for="project_id">Proyek</label>
+                            <input type="text" id="project_id" name="project_id" disabled placeholder="Pilih nama instansi terlebih dahulu.." class="form-control select2" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-12 col-xs-12">
+                        <div class="form-group">
+                            <label class="hidden-xs" style="display: block;">&nbsp;</label>
                             <div class="btn-group" style="display: block;">
                                 <button type="submit" name="search" class="btn btn-default" value="2">
                                     <i class="fa fa-search"></i> Filter
@@ -84,6 +95,7 @@
                         </div>
                     </div>
                 </div>
+
             </form>
         </div>
 
@@ -95,7 +107,7 @@
                             <th colspan="5">
                                 <center>
                                     <h3>Laporan Pembelian Chaakra</h3>
-                                    <p><?=$project  ?></p>
+                                    <p><?= $project  ?></p>
 
                                     <p><strong><?php echo $date_range ?></strong></p>
                                     <p><strong><?php echo $paid ?></strong></p>
@@ -151,13 +163,51 @@
         setDatePicker("#start_date");
         setDatePicker("#end_date");
 
-        $('#project_id').select2({
-            placeholder: 'Cari Proyek...',
+        var customer_select = $('#customer').select2({
+            placeholder: 'Cari Nama Instansi...',
             allowClear: true,
-            theme:'bootstrap-3',
+            theme: 'bootstrap-3',
             width: '100%',
             ajax: {
-                url: '<?= base_url("purchase/p_invoices/get_all_project") ?>',
+                url: '<?= base_url("master/customers/get_list_data") ?>',
+                type: "POST",
+                dataType: 'json',
+                delay: 250,
+                data: function(term, page) {
+                    return {
+                        '<?php echo $this->security->get_csrf_token_name(); ?>': '<?php echo $this->security->get_csrf_hash(); ?>',
+                        search: term // Only send the search keyword
+                    };
+                    console.log(term);
+
+                },
+                results: function(data) {
+
+                    return {
+                        results: data.data.map(function(item) {
+                            return {
+                                id: item.master_customers_id, // Use the master_customers_id as the option value
+                                text: item.name // Use the name as the option text
+                            };
+                        })
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1
+        });
+
+        
+        $(document.body).on("change", "#customer", function() {
+            $('#project_id').val(null).trigger('change'); // Clear the project_id select2 value
+            $('#project_id').prop('disabled', !$(this).val());
+            $('#project_id').select2({
+            placeholder: 'Cari Proyek...',
+            allowClear: true,
+            theme: 'bootstrap-3',
+            width: '100%',
+            ajax: {
+                url: '<?= base_url("purchase/p_invoices/get_all_project") ?>/' + $(this).val(),
                 type: "POST",
                 dataType: 'json',
                 delay: 250,
@@ -181,7 +231,8 @@
                 },
                 cache: true
             },
-            minimumInputLength: 1
         });
+        });
+
     });
 </script>
