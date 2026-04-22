@@ -20,7 +20,7 @@ class R_purchase extends MY_Controller
         $end = isset($_GET['end']) ? $_GET['end'] : date("Y-m-d");
         $paid = isset($_GET['paid']) ? $_GET['paid'] : 'paid';
         $code = isset($_GET['code']) ? $_GET['code'] : 'code';
-        $project_id = isset($_GET['project_id']) ? $_GET['project_id'] : 'project_id';
+        $project_id = isset($_GET['project_id']) ? $_GET['project_id'] : '';
 
         // Check if 'start' and 'end' parameters are set
         if (!isset($_GET['start']) || !isset($_GET['end'])) {
@@ -47,7 +47,7 @@ class R_purchase extends MY_Controller
             $sql .= " AND purchase_invoices.code = '" . $code . "'";
         }
 
-        if (!empty($project_id)) {
+        if (isset($project_id) && $project_id !== '') {
             $sql .= " AND purchase_invoices.project_id = '" . $project_id . "'";
             $project = $this->db->query("SELECT title FROM sales_invoices_items WHERE id = '$project_id'")->row()->title;
             $project = "Proyek: " . $project;
@@ -75,5 +75,6 @@ class R_purchase extends MY_Controller
         } else {
             $this->template->rander("purchase/purchase_product", $view_data);
         }
+        // print_r($project_id);
     }
 }
