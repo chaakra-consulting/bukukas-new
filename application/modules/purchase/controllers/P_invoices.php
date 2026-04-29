@@ -18,7 +18,7 @@ class P_invoices extends MY_Controller
     {
         $search = $this->input->post('search');
         $this->db->from('sales_invoices_items');
-        $this->db->where('deleted',0);
+        $this->db->where('deleted', 0);
         if (!empty($search) && $search !== 'null') {
             $this->db->like('sales_invoices_items.title', $search);
         }
@@ -42,12 +42,12 @@ class P_invoices extends MY_Controller
     }
 
 
-    function update_project_id($purchase_id) {
+    function update_project_id($purchase_id)
+    {
         $project_id = $this->input->post('project_id');
         $this->db->where('id', $purchase_id);
         $this->db->update('purchase_invoices', array('project_id' => $project_id));
         redirect(base_url() . 'purchase/p_invoices/view/' . $purchase_id);
-
     }
 
     function index()
@@ -168,7 +168,7 @@ class P_invoices extends MY_Controller
             "paid" => "Not Paid",
             //"email_to" => $this->input->post('email_to'),
             "inv_date" => $this->input->post('inv_date'),
-            "project_id"=> $this->input->post('project_id'),
+            "project_id" => $this->input->post('project_id'),
             //"end_date" => $this->input->post('end_date'),
 
             //"currency" => $this->input->post('currency'),
@@ -285,27 +285,33 @@ class P_invoices extends MY_Controller
 
     /* delete or undo a client */
 
-    function delete()
+    function delete($id)
     {
-
-        validate_submitted_data(array(
-            "id" => "required|numeric"
-        ));
-
-        $id = $this->input->post('id');
-        if ($this->input->post('undo')) {
-            if ($this->Purchase_Invoices_model->delete($id, true)) {
-                echo json_encode(array("success" => true, "data" => $this->_row_data($id), "message" => lang('record_undone')));
+        $query = $this->db->query("UPDATE purchase_invoices SET deleted = 1 WHERE id = $id");
+        if ($this->Purchase_Invoices_model->delete($id)) {
+                redirect(base_url() . 'purchase/p_invoices');
             } else {
-                echo json_encode(array("success" => false, lang('error_occurred')));
+                redirect(base_url() . 'purchase/p_invoices');
             }
-        } else {
-            if ($this->Purchase_Invoices_model->delete($id)) {
-                echo json_encode(array("success" => true, 'message' => lang('record_deleted')));
-            } else {
-                echo json_encode(array("success" => false, 'message' => lang('record_cannot_be_deleted')));
-            }
-        }
+
+        // validate_submitted_data(array(
+        //     "id" => "required|numeric"
+        // ));
+
+        // // $id = $this->input->post('id');
+        // if ($this->input->post('undo')) {
+            // if ($this->Purchase_Invoices_model->delete($id, true)) {
+            //     echo json_encode(array("success" => true, "data" => $this->_row_data($id), "message" => lang('record_undone')));
+            // } else {
+            //     echo json_encode(array("success" => false, lang('error_occurred')));
+            // }
+        // } else {
+        //     if ($this->Purchase_Invoices_model->delete($id)) {
+        //         echo json_encode(array("success" => true, 'message' => lang('record_deleted')));
+        //     } else {
+        //         echo json_encode(array("success" => false, 'message' => lang('record_cannot_be_deleted')));
+        //     }
+        // }
     }
 
     /* verifikasi or undo a client */
@@ -347,6 +353,7 @@ class P_invoices extends MY_Controller
         $result = array();
         foreach ($list_data as $data) {
             $result[] = $this->_make_row($data);
+            // $result[] = $data;
         }
 
         echo json_encode(array("data" => $result));
@@ -422,17 +429,16 @@ where purchase_invoices.id = $data->id"
 
         if ($data->status != "paid" and $data->status != "posting" and $data->is_verified == "0") {
             $row_data[] = modal_anchor(get_uri("purchase/p_invoices/modal_form_edit"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => 'Edit Pengeluaran', "data-post-id" => $data->id))
-                . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_client'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("purchase/p_invoices/delete"), "data-action" => "delete"))
-                . anchor(get_uri("purchase/p_invoices/verifikasi/") . $data->id, "<i class='fa fa-check'></i>", array("class" => "view", "title" => "Verifikasi Purchase Order", "data-post-id" => $data->id));;
+                . '<a title="Delete client" class="delete" data-id="'. $data->id.'" href="'.get_uri("purchase/p_invoices/verifikasi/") . $data->id.'"><i class="fa fa-times fa-fw"></i></a>'
+                . anchor(get_uri("purchase/p_invoices/verifikasi/") . $data->id, "<i class='fa fa-check'></i>", array("class" => "view", "title" => "Verifikasi Purchase Order", "data-post-id" => $data->id));
         }
         if ($data->paid != "PAID") {
             $row_data[] = anchor(get_uri("purchase/p_invoices/bayar/") . $data->id, "<i class='fa fa-money'></i>", array("class" => "view", "title" => "Pay", "data-post-id" => $data->id))
                 . anchor(get_uri("purchase/p_invoices/view/") . $data->id, "<i class='fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id))
-                . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_client'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("purchase/p_invoices/delete"), "data-action" => "delete"));
+                . '<a title="Delete client" class="delete" data-id="'. $data->id.'" href="'.get_uri("purchase/p_invoices/delete/") . $data->id.'"><i class="fa fa-times fa-fw"></i></a>';
         }
         $row_data[] = anchor(get_uri("purchase/p_invoices/view/") . $data->id, "<i class='fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id))
-            . js_anchor("<i class='fa fa-times fa-fw'></i>", array('title' => lang('delete_client'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("purchase/p_invoices/delete"), "data-action" => "delete"));
-
+            . '<a title="Delete client" class="delete" data-id="'. $data->id.'" href="'.get_uri("purchase/p_invoices/delete/") . $data->id.'"><i class="fa fa-times fa-fw"></i></a>';
         return $row_data;
     }
 
