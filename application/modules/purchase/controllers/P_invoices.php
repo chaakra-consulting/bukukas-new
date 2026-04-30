@@ -289,10 +289,12 @@ class P_invoices extends MY_Controller
     {
         $query = $this->db->query("UPDATE purchase_invoices SET deleted = 1 WHERE id = $id");
         if ($this->Purchase_Invoices_model->delete($id)) {
-                redirect(base_url() . 'purchase/p_invoices');
-            } else {
-                redirect(base_url() . 'purchase/p_invoices');
-            }
+            $this->session->set_flashdata('success_message', 'Pengeluaran berhasil dihapus.');
+            redirect(base_url() . 'purchase/p_invoices');
+        } else {
+            $this->session->set_flashdata('error_message', 'Terjadi kesalahan saat menghapus pengeluaran.');
+            redirect(base_url() . 'purchase/p_invoices');
+        }
 
         // validate_submitted_data(array(
         //     "id" => "required|numeric"
@@ -429,16 +431,16 @@ where purchase_invoices.id = $data->id"
 
         if ($data->status != "paid" and $data->status != "posting" and $data->is_verified == "0") {
             $row_data[] = modal_anchor(get_uri("purchase/p_invoices/modal_form_edit"), "<i class='fa fa-pencil'></i>", array("class" => "edit", "title" => 'Edit Pengeluaran', "data-post-id" => $data->id))
-                . '<a title="Delete client" class="delete" data-id="'. $data->id.'" href="'.get_uri("purchase/p_invoices/verifikasi/") . $data->id.'"><i class="fa fa-times fa-fw"></i></a>'
+                . '<a title="Hapus Pengeluaran" class="delete" data-id="'. $data->id.'" href="'.get_uri("purchase/p_invoices/delete/") . $data->id.'"><i class="fa fa-times fa-fw"></i></a>'
                 . anchor(get_uri("purchase/p_invoices/verifikasi/") . $data->id, "<i class='fa fa-check'></i>", array("class" => "view", "title" => "Verifikasi Purchase Order", "data-post-id" => $data->id));
         }
         if ($data->paid != "PAID") {
             $row_data[] = anchor(get_uri("purchase/p_invoices/bayar/") . $data->id, "<i class='fa fa-money'></i>", array("class" => "view", "title" => "Pay", "data-post-id" => $data->id))
                 . anchor(get_uri("purchase/p_invoices/view/") . $data->id, "<i class='fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id))
-                . '<a title="Delete client" class="delete" data-id="'. $data->id.'" href="'.get_uri("purchase/p_invoices/delete/") . $data->id.'"><i class="fa fa-times fa-fw"></i></a>';
+                . '<a title="Hapus Pengeluaran" class="delete" data-id="'. $data->id.'" href="'.get_uri("purchase/p_invoices/delete/") . $data->id.'"><i class="fa fa-times fa-fw"></i></a>';
         }
         $row_data[] = anchor(get_uri("purchase/p_invoices/view/") . $data->id, "<i class='fa fa-eye'></i>", array("class" => "view", "title" => lang('view'), "data-post-id" => $data->id))
-            . '<a title="Delete client" class="delete" data-id="'. $data->id.'" href="'.get_uri("purchase/p_invoices/delete/") . $data->id.'"><i class="fa fa-times fa-fw"></i></a>';
+            . '<a title="Hapus Pengeluaran" class="delete" data-id="'. $data->id.'" href="'.get_uri("purchase/p_invoices/delete/") . $data->id.'"><i class="fa fa-times fa-fw"></i></a>';
         return $row_data;
     }
 

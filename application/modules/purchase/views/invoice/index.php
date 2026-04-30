@@ -70,7 +70,22 @@
 
             </div>
         </div>
+
         <div class="table-responsive" style="padding: 10px 10px 0 10px;">
+            <?php if ($this->session->flashdata('success_message')): ?>
+                <div class="alert alert-success alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <strong>Success!</strong> <?php echo $this->session->flashdata('success_message'); ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Error/Warning Alert -->
+            <?php if ($this->session->flashdata('error_message')): ?>
+                <div class="alert alert-warning alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <strong>Warning!</strong> <?php echo $this->session->flashdata('error_message'); ?>
+                </div>
+            <?php endif; ?>
             <table id="invoices-table" class=" table table-striped table-bordered" cellspacing="0" width="100%" style="font-size:12px">
             </table>
         </div>

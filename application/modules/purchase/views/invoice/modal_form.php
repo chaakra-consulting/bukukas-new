@@ -130,22 +130,35 @@
         $("#invoices-form .select2").select2();
         setDatePicker("#inv_date");
         setDatePicker("#end_date");
-        // $("#invoices-form").appForm({
-        //     onSuccess: function (result) {
-        //         $("#invoices-table").appTable({newData: result.data, dataId: result.id});
-        //     }
-        // });
-            RELOAD_VIEW_AFTER_UPDATE = false; //go to invoice page
+        
+        RELOAD_VIEW_AFTER_UPDATE = false; //go to invoice page
         
         $("#invoices-form").appForm({
+            // 1. Add the onSubmit hook to trigger the loader
+            onSubmit: function () {
+                var $submitBtn = $("#invoices-form").find('button[type="submit"]');
+                $submitBtn.attr("disabled", true).html("<span class='fa fa-spinner fa-spin'></span> Processing...");
+                
+                // Optional: If you want to use the app's global overlay loader as well
+                if (typeof appLoader !== 'undefined') { appLoader.show(); }
+            },
             onSuccess: function (result) {
                 if (typeof RELOAD_VIEW_AFTER_UPDATE !== "undefined" && RELOAD_VIEW_AFTER_UPDATE) {
                     location.reload();
+                    appAlert.success("Data berhasil ditambahkan", {duration: 10000});
                 } else {
                     window.location = "<?php echo site_url('purchase/p_invoices/view'); ?>/" + result.id;
                 }
             },
             onAjaxSuccess: function (result) {
+                // 2. Re-enable the button if the request fails (e.g., validation errors)
+                if (!result.success) {
+                    var $submitBtn = $("#invoices-form").find('button[type="submit"]');
+                    $submitBtn.removeAttr("disabled").html("<span class='fa fa-check-circle'></span> <?php echo lang('save'); ?>");
+                    
+                    // if (typeof appLoader !== 'undefined') { appLoader.hide(); }
+                }
+
                 if (!result.success && result.next_recurring_date_error) {
                     $("#next_recurring_date").val(result.next_recurring_date_value);
                     $("#next_recurring_date_container").removeClass("hide");
@@ -156,19 +169,15 @@
                 }
             }
         });
+
         $("#fid_cust").select2().on("change", function () {
             var clients_id = $(this).val();
             if ($(this).val()) {
-                // $('#invoice_project_id').select2("destroy");
-                // $("#invoice_project_id").hide();
-                // appLoader.show({container: "#invoice-porject-dropdown-section"});
                 $.ajax({
-                    url: "<?php echo get_uri("master/vendors/getId") ?>" + "/" + client_id,
+                    url: "<?php echo get_uri("master/vendors/getId") ?>" + "/" + clients_id,
                     dataType: "json",
-                    // data: data,
                     type:'GET',
                     success: function (data) {
-
                          $.each(data, function(index, element) {
                             $("#fid_cust").val(element.id).select2();
                             $("#email_to").val(element.email);
@@ -179,16 +188,13 @@
                 });
             }
         });
+
         $("#fid_order").select2().on("change", function () {
             var client_id = $(this).val();
             if ($(this).val()) {
-                // $('#invoice_project_id').select2("destroy");
-                // $("#invoice_project_id").hide();
-                // appLoader.show({container: "#invoice-porject-dropdown-section"});
                 $.ajax({
                     url: "<?php echo get_uri("purchase/p_invoices/getOrderId") ?>" + "/" + client_id,
                     dataType: "json",
-                    // data: data,
                     type:'GET',
                     success: function (data) {
                          $.each(data, function(index, element) {
@@ -202,22 +208,18 @@
                 $.ajax({
                     url: "<?php echo get_uri("purchase/p_invoices/getOrderIdC") ?>" + "/" + client_id,
                     dataType: "json",
-                    // data: data,
                     type:'GET',
                     success: function (data) {
                          $.each(data, function(index, element) {
                             $("#fid_cust").val(element.id).select2();
-
                          });
                     }
                 });
                 $.ajax({
                     url: "<?php echo get_uri("purchase/p_invoices/getOrderIdP") ?>" + "/" + client_id,
                     dataType: "json",
-                    // data: data,
                     type:'GET',
                     success: function (data) {
-
                          $.each(data, function(index, element) {
                             $("#fid_custt").val(element.id).select2();
                          });
